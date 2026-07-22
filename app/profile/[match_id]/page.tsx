@@ -12,8 +12,8 @@ type Message = {
   created_at: string
 }
 
-export default function ChatPage({ params }: { params: { match_id: string } }) {
-  const match_id = params.match_id
+export default function ChatPage({ params }: { params: Promise<{ match_id: string }> }) {
+  const { match_id } = use(params)
 
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -119,8 +119,8 @@ export default function ChatPage({ params }: { params: { match_id: string } }) {
             <div key={msg.id} className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2 ${isMyMessage
-                    ? 'bg-blue-500 text-white rounded-br-none'
-                    : 'bg-white text-gray-800 rounded-bl-none shadow-sm'
+                  ? 'bg-blue-500 text-white rounded-br-none'
+                  : 'bg-white text-gray-800 rounded-bl-none shadow-sm'
                   }`}
               >
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
