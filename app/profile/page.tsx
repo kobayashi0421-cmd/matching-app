@@ -1,159 +1,288 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
-type Message = {
+type Profile = {
   id: string
-  match_id: string
-  sender_id: string
-  content: string
-  created_at: string
+  display_name: string | null
+  avatar_url: string | null
+  bio: string | null
+  hobby_tags: string[] | null
 }
 
-export default function ChatPage({ params }: { params: Promise<{ match_id: string }> }) {
-  // Next.js 15では params は Promise のため use() で展開します
-  const { match_id } = use(params)
-  
-  const [messages, setMessages] = useState<Message[]>([])
-  const [newMessage, setNewMessage] = useState('')
+type MatchWithProfile = {
+  match_id: string
+  partner: Profile
+}
+
+export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
-  
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [displayName, setDisplayName] = useState('')
+  const [bio, setBio] = useState('')
+  const [hobbyTagsInput, setHobbyTagsInput] = useState('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [matches, setMatches] = useState<MatchWithProfile[]>([])
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+
   const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
-    // 1. ログインしているユーザーの情報を取得
-    const getUser = async () => {
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/login')
         return
       }
       setUserId(user.id)
-    }
-    getUser()
 
-    // 2. 過去のメッセージ履歴を取得
-    const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('messages')
+      // 自分のプロフィールを取得
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
         .select('*')
-        .eq('match_id', match_id)
-        .order('created_at', { ascending: true })
-      
-      if (error) {
-        console.error("メッセージ取得エラー:", error)
-      } else if (data) {
-        setMessages(data)
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        console.error('プロフィール取得エラー:', profileError)
+      } else if (profileData) {
+        setProfile(profileData)
+        setDisplayName(profileData.display_name ?? '')
+        setBio(profileData.bio ?? '')
+        setHobbyTagsInput((profileData.hobby_tags ?? []).join(', '))
+        setAvatarPreview(profileData.avatar_url)
       }
-    }
-    fetchMessages()
 
-    // 3. ✨ リアルタイム（Realtime）の購読設定 ✨
-    // 誰かがメッセージを送信してデータベースに追加されたら、自動で検知して画面を更新する
-    const channel = supabase
-      .channel(`chat_${match_id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT', // データが追加された時だけ
-          schema: 'public',
-          table: 'messages',
-          filter: `match_id=eq.${match_id}` // このマッチングルームのメッセージだけ
-        },
-        (payload) => {
-          // 新しいメッセージが届いたらリストに追加
-          const newMsg = payload.new as Message
-          setMessages((prev) => [...prev, newMsg])
+      // マッチ相手一覧を取得
+      const { data: matchesData, error: matchesError } = await supabase
+        .from('matches')
+        .select('*')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+
+      if (matchesError) {
+        console.error('マッチ一覧取得エラー:', matchesError)
+      } else if (matchesData && matchesData.length > 0) {
+        const partnerIds = matchesData.map((m) =>
+          m.user1_id === user.id ? m.user2_id : m.user1_id
+        )
+
+        const { data: partnerProfiles, error: partnerError } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url, bio, hobby_tags')
+          .in('id', partnerIds)
+
+        if (partnerError) {
+          console.error('マッチ相手プロフィール取得エラー:', partnerError)
+        } else {
+          const combined: MatchWithProfile[] = matchesData
+            .map((m) => {
+              const partnerId = m.user1_id === user.id ? m.user2_id : m.user1_id
+              const partner = partnerProfiles?.find((p) => p.id === partnerId)
+              if (!partner) return null
+              return { match_id: m.id, partner }
+            })
+            .filter((x): x is MatchWithProfile => x !== null)
+
+          setMatches(combined)
         }
-      )
-      .subscribe()
+      }
 
-    // 画面を離れたらリアルタイム通信を解除する（お作法）
-    return () => {
-      supabase.removeChannel(channel)
+      setLoading(false)
     }
-  }, [match_id, router, supabase])
 
-  // メッセージ送信ボタンを押したときの処理
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newMessage.trim() || !userId) return
+    init()
+  }, [router, supabase])
 
-    // Supabaseにメッセージを保存
-    const { error } = await supabase
-      .from('messages')
-      .insert([
-        {
-          match_id: match_id,
-          sender_id: userId,
-          content: newMessage,
-        }
-      ])
-    
-    if (error) {
-      console.error('送信エラー:', error.message)
-      alert('メッセージの送信に失敗しました')
+  // アバター画像選択時のプレビュー
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
+  }
+
+  // プロフィール保存処理
+  const handleSave = async () => {
+    if (!userId) return
+    setSaving(true)
+
+    let avatarUrl = profile?.avatar_url ?? null
+
+    // 新しい画像が選択されていればアップロード
+    if (avatarFile) {
+      const fileExt = avatarFile.name.split('.').pop()
+      const filePath = `${userId}/avatar.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile, { upsert: true })
+
+      if (uploadError) {
+        console.error('画像アップロードエラー:', uploadError)
+        alert('画像のアップロードに失敗しました')
+        setSaving(false)
+        return
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      avatarUrl = publicUrlData.publicUrl
+    }
+
+    const hobbyTags = hobbyTagsInput
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        display_name: displayName,
+        bio: bio,
+        hobby_tags: hobbyTags,
+        avatar_url: avatarUrl,
+      })
+      .eq('id', userId)
+
+    if (updateError) {
+      console.error('プロフィール更新エラー:', updateError)
+      alert('プロフィールの保存に失敗しました')
     } else {
-      setNewMessage('') // 送信に成功したら入力欄を空にする
-      // ※Realtime機能がオンになっているので、自動的にリストに追加されます
+      alert('プロフィールを保存しました')
+      setAvatarFile(null)
     }
+
+    setSaving(false)
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-500">
+        読み込み中...
+      </div>
+    )
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      {/* ヘッダー */}
-      <header className="bg-white p-4 shadow-sm flex items-center border-b">
-        <button onClick={() => router.push('/profile')} className="text-blue-500 font-medium mr-4">
-          ← 戻る
+    <div className="max-w-2xl mx-auto p-4 space-y-8">
+      <header className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-800">マイプロフィール</h1>
+        <button
+          onClick={handleLogout}
+          className="text-sm text-red-500 font-medium"
+        >
+          ログアウト
         </button>
-        <h1 className="text-lg font-bold text-gray-800">チャットルーム</h1>
       </header>
 
-      {/* メッセージ一覧エリア */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => {
-          const isMyMessage = msg.sender_id === userId
-          return (
-            <div key={msg.id} className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                  isMyMessage 
-                    ? 'bg-blue-500 text-white rounded-br-none' 
-                    : 'bg-white text-gray-800 rounded-bl-none shadow-sm'
-                }`}
-              >
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <span className={`text-[10px] mt-1 block text-right ${isMyMessage ? 'text-blue-100' : 'text-gray-400'}`}>
-                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </main>
+      {/* プロフィール編集 */}
+      <section className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+        <div className="flex flex-col items-center gap-3">
+          <img
+            src={avatarPreview || '/default-avatar.png'}
+            alt="アバター"
+            className="w-24 h-24 rounded-full object-cover border"
+          />
+          <label className="text-sm text-blue-500 cursor-pointer">
+            画像を変更
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </label>
+        </div>
 
-      {/* 入力エリア */}
-      <footer className="bg-white p-4 border-t border-gray-200">
-        <form onSubmit={sendMessage} className="flex gap-2 max-w-3xl mx-auto">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            表示名
+          </label>
           <input
             type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="メッセージを入力..."
-            className="flex-1 rounded-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-900"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
           />
-          <button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className="bg-blue-500 text-white rounded-full px-6 py-2 font-bold disabled:opacity-50 hover:bg-blue-600 transition-colors"
-          >
-            送信
-          </button>
-        </form>
-      </footer>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            自己紹介
+          </label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={4}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            趣味タグ(カンマ区切り)
+          </label>
+          <input
+            type="text"
+            value={hobbyTagsInput}
+            onChange={(e) => setHobbyTagsInput(e.target.value)}
+            placeholder="例: 読書, 映画鑑賞, カフェ巡り"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
+          />
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full bg-blue-500 text-white rounded-full py-2 font-bold disabled:opacity-50"
+        >
+          {saving ? '保存中...' : '保存する'}
+        </button>
+      </section>
+
+      {/* マッチ相手一覧 */}
+      <section>
+        <h2 className="text-lg font-bold text-gray-800 mb-3">マッチした相手</h2>
+        {matches.length === 0 ? (
+          <p className="text-gray-500 text-sm">まだマッチした相手がいません</p>
+        ) : (
+          <div className="space-y-2">
+            {matches.map((m) => (
+              <button
+                key={m.match_id}
+                onClick={() => router.push(`/chat/${m.match_id}`)}
+                className="w-full flex items-center gap-3 bg-white rounded-xl shadow-sm p-3 hover:bg-gray-50 transition-colors"
+              >
+                <img
+                  src={m.partner.avatar_url || '/default-avatar.png'}
+                  alt={m.partner.display_name || ''}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div className="text-left">
+                  <p className="font-medium text-gray-800">
+                    {m.partner.display_name || '名前未設定'}
+                  </p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {(m.partner.hobby_tags ?? []).slice(0, 3).join(' / ')}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
