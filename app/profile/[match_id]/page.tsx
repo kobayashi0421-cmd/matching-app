@@ -12,14 +12,13 @@ type Message = {
   created_at: string
 }
 
-export default function ChatPage({ params }: { params: Promise<{ match_id: string }> }) {
-  // Next.js 15では params は Promise のため use() で展開します
-  const { match_id } = use(params)
-  
+export default function ChatPage({ params }: { params: { match_id: string } }) {
+  const match_id = params.match_id
+
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
-  
+
   const supabase = createClient()
   const router = useRouter()
 
@@ -42,7 +41,7 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
         .select('*')
         .eq('match_id', match_id)
         .order('created_at', { ascending: true })
-      
+
       if (error) {
         console.error("メッセージ取得エラー:", error)
       } else if (data) {
@@ -92,7 +91,7 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
           content: newMessage,
         }
       ])
-    
+
     if (error) {
       console.error('送信エラー:', error.message)
       alert('メッセージの送信に失敗しました')
@@ -119,11 +118,10 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
           return (
             <div key={msg.id} className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                  isMyMessage 
-                    ? 'bg-blue-500 text-white rounded-br-none' 
+                className={`max-w-[75%] rounded-2xl px-4 py-2 ${isMyMessage
+                    ? 'bg-blue-500 text-white rounded-br-none'
                     : 'bg-white text-gray-800 rounded-bl-none shadow-sm'
-                }`}
+                  }`}
               >
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                 <span className={`text-[10px] mt-1 block text-right ${isMyMessage ? 'text-blue-100' : 'text-gray-400'}`}>
