@@ -59,8 +59,7 @@ export default function LoginPage() {
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: false,
-        emailRedirectTo: `${location.origin}/auth/callback`,   // ← この行を追加
+        shouldCreateUser: false, // ← この行を追加
       },
     })
 
