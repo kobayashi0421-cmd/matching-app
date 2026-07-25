@@ -163,7 +163,7 @@ export default function LoginPage() {
           <form className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                確認コード（6桁）
+                確認コード（8桁）
               </label>
               <input
                 type="text"
