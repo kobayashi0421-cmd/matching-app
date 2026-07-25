@@ -172,7 +172,7 @@ export default function LoginPage() {
                 onChange={(e) => setOtp(e.target.value)}
                 className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 tracking-widest text-center text-lg"
                 placeholder="123456"
-                maxLength={6}
+                maxLength={8}
                 required
               />
             </div>
