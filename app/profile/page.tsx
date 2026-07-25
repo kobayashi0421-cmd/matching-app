@@ -48,7 +48,24 @@ export default function ProfilePage() {
         .eq('id', user.id)
         .single()
 
-      if (profileError) {
+      if (profileError && profileError.code === 'PGRST116') {
+        // プロフィール行がまだ無いので新規作成する
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({ id: user.id })
+          .select()
+          .single()
+
+        if (insertError) {
+          console.error('プロフィール作成エラー:', insertError)
+        } else if (newProfile) {
+          setProfile(newProfile)
+          setDisplayName(newProfile.display_name ?? '')
+          setBio(newProfile.bio ?? '')
+          setHobbyTagsInput((newProfile.hobby_tags ?? []).join(', '))
+          setAvatarPreview(newProfile.avatar_url)
+        }
+      } else if (profileError) {
         console.error('プロフィール取得エラー:', profileError)
       } else if (profileData) {
         setProfile(profileData)
