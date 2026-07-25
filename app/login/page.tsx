@@ -60,6 +60,7 @@ export default function LoginPage() {
       email,
       options: {
         shouldCreateUser: false,
+        emailRedirectTo: `${location.origin}/auth/callback`,   // ← この行を追加
       },
     })
 
