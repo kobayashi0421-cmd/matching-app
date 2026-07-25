@@ -67,7 +67,7 @@ export default function LoginPage() {
     if (otpError) {
       setMessage(`エラー: 確認コードの送信に失敗しました。(${otpError.message})`)
     } else {
-      setMessage('確認コードをメールに送信しました。届いた6桁のコードを入力してください。')
+      setMessage('確認コードをメールに送信しました。届いた8桁のコードを入力してください。')
       setStep('otp')
     }
     setLoading(false)
