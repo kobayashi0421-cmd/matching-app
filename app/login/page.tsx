@@ -4,26 +4,78 @@ import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
+type Step = 'login' | 'register' | 'otp'
+
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [otp, setOtp] = useState('')
-  const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
+  const [step, setStep] = useState<Step>('login')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+
+  // login fields
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+
+  // register fields
+  const [registerEmail, setRegisterEmail] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
+  const [registerName, setRegisterName] = useState('')
+  const [registerFurigana, setRegisterFurigana] = useState('')
+  const [termsAgree, setTermsAgree] = useState(false)
+  const [privacyAgree, setPrivacyAgree] = useState(false)
+
+  // otp
+  const [otp, setOtp] = useState('')
+  const [otpEmail, setOtpEmail] = useState('')
 
   const router = useRouter()
   const supabase = createClient()
 
-  // 新規登録ボタンが押されたときの処理
+  // ログイン(1段階目: パスワード確認 → 2段階目: OTP送信)
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    })
+
+    if (signInError) {
+      setMessage('エラー: メールアドレスかパスワードが間違っています。')
+      setLoading(false)
+      return
+    }
+
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: loginEmail,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${location.origin}/auth/callback`,
+      },
+    })
+
+    if (otpError) {
+      setMessage(`エラー: 確認コードの送信に失敗しました。(${otpError.message})`)
+    } else {
+      setOtpEmail(loginEmail)
+      setMessage('')
+      setStep('otp')
+    }
+    setLoading(false)
+  }
+
+  // 新規登録
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
 
+    // TODO: registerName / registerFurigana は現状 profiles テーブルに対応カラムが無いため未保存。
+    // auth/callback 側で profiles へ初期値として書き込む処理を追加する必要あり。
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: registerEmail,
+      password: registerPassword,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
       },
@@ -37,50 +89,14 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  // ログインボタン(1段階目: パスワード確認)
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage('')
-
-    // まずパスワードで本人確認
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (signInError) {
-      setMessage('エラー: メールアドレスかパスワードが間違っています。')
-      setLoading(false)
-      return
-    }
-
-    // パスワード確認OK → 2段階目としてメールにOTPコードを送信
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: `${location.origin}/auth/callback`,   // ← この行を追加
-      },
-    })
-
-    if (otpError) {
-      setMessage(`エラー: 確認コードの送信に失敗しました。(${otpError.message})`)
-    } else {
-      setMessage('確認コードをメールに送信しました。届いた8桁のコードを入力してください。')
-      setStep('otp')
-    }
-    setLoading(false)
-  }
-
-  // OTPコード確認ボタン(2段階目)
+  // OTPコード確認
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
 
     const { error } = await supabase.auth.verifyOtp({
-      email,
+      email: otpEmail,
       token: otp,
       type: 'email',
     })
@@ -94,112 +110,228 @@ export default function LoginPage() {
     setLoading(false)
   }
 
+  const canSubmitRegister = termsAgree && privacyAgree
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-blue-50 p-4">
-      <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-lg border border-blue-100">
+    <div className="outer-wrap">
+      <div className="app-container">
 
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-blue-600 tracking-tight">
-            UniMatch
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">大学生限定のマッチングアプリ</p>
-        </div>
-
-        {step === 'credentials' && (
-          <form className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                大学のメールアドレス
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                placeholder="s.do-johodai.ac.jp"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                パスワード（6文字以上）
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            {message && (
-              <div className={`p-4 rounded-xl text-sm font-medium ${message.includes('エラー') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                {message}
+        {/* ========================================== */}
+        {/* 1. LOGIN SCREEN                             */}
+        {/* ========================================== */}
+        {step === 'login' && (
+          <section id="screen-login" className="screen active">
+            <div className="auth-card">
+              <div className="auth-header">
+                <span className="vertical-bar"></span>
+                <h2>ログイン</h2>
               </div>
-            )}
+              <form id="form-login" className="auth-form" onSubmit={handleSignIn}>
+                <div className="form-group">
+                  <label htmlFor="login-email">メールアドレス</label>
+                  <input
+                    type="email"
+                    id="login-email"
+                    placeholder="メールアドレスを入力してください"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="login-password">パスワード</label>
+                  <input
+                    type="password"
+                    id="login-password"
+                    placeholder="パスワードを入力してください"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <div className="flex flex-col gap-3 pt-4">
-              <button
-                onClick={handleSignIn}
-                disabled={loading}
-                className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 disabled:opacity-50"
-              >
-                ログイン
-              </button>
-              <button
-                onClick={handleSignUp}
-                disabled={loading}
-                className="w-full bg-white text-blue-600 font-bold py-3 px-4 rounded-xl border-2 border-blue-600 hover:bg-blue-50 disabled:opacity-50"
-              >
-                新規登録
-              </button>
+                {message && (
+                  <div className={`form-message ${message.includes('エラー') ? 'is-error' : 'is-success'}`}>
+                    {message}
+                  </div>
+                )}
+
+                <button type="submit" className="btn-primary auth-submit-btn" disabled={loading}>
+                  ログイン
+                </button>
+              </form>
+              <div className="auth-footer">
+                <p>アカウントをお持ちでないですか？</p>
+                <button
+                  className="btn-secondary-link"
+                  id="goto-register"
+                  onClick={() => { setMessage(''); setStep('register') }}
+                >
+                  新規会員登録はこちら
+                </button>
+              </div>
             </div>
-          </form>
+          </section>
         )}
 
-        {step === 'otp' && (
-          <form className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                確認コード（8桁）
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 tracking-widest text-center text-lg"
-                placeholder="12345678"
-                maxLength={8}
-                required
-              />
-            </div>
-
-            {message && (
-              <div className={`p-4 rounded-xl text-sm font-medium ${message.includes('エラー') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                {message}
+        {/* ========================================== */}
+        {/* 2. REGISTER SCREEN                          */}
+        {/* ========================================== */}
+        {step === 'register' && (
+          <section id="screen-register" className="screen active">
+            <div className="auth-card">
+              <div className="auth-header">
+                <span className="vertical-bar"></span>
+                <h2>会員登録</h2>
               </div>
-            )}
+              <form id="form-register" className="auth-form" onSubmit={handleSignUp}>
+                <div className="form-group">
+                  <label htmlFor="register-email">メールアドレス</label>
+                  <input
+                    type="email"
+                    id="register-email"
+                    placeholder="メールアドレスを入力してください"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="register-password">パスワード</label>
+                  <input
+                    type="password"
+                    id="register-password"
+                    placeholder="パスワードを入力してください"
+                    minLength={6}
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="register-name">氏名</label>
+                  <input
+                    type="text"
+                    id="register-name"
+                    placeholder="氏名を入力してください"
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="register-furigana">氏名（フリガナ）</label>
+                  <input
+                    type="text"
+                    id="register-furigana"
+                    placeholder="氏名（フリガナ）を入力してください"
+                    value={registerFurigana}
+                    onChange={(e) => setRegisterFurigana(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <div className="flex flex-col gap-3 pt-4">
-              <button
-                onClick={handleVerifyOtp}
-                disabled={loading}
-                className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 disabled:opacity-50"
-              >
-                コードを確認してログイン
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep('credentials')}
-                className="text-sm text-gray-500 hover:underline"
-              >
-                戻る
-              </button>
+                <div className="form-group terms-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="register-terms-agree"
+                    checked={termsAgree}
+                    onChange={(e) => setTermsAgree(e.target.checked)}
+                    required
+                  />
+                  <label htmlFor="register-terms-agree">
+                    <button type="button" className="btn-secondary-link">利用規約</button>に同意します。
+                  </label>
+                </div>
+                <div className="form-group terms-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="register-privacy-agree"
+                    checked={privacyAgree}
+                    onChange={(e) => setPrivacyAgree(e.target.checked)}
+                    required
+                  />
+                  <label htmlFor="register-privacy-agree">
+                    <button type="button" className="btn-secondary-link">プライバシーポリシー</button>に同意します。
+                  </label>
+                </div>
+
+                {message && (
+                  <div className={`form-message ${message.includes('エラー') ? 'is-error' : 'is-success'}`}>
+                    {message}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn-primary auth-submit-btn"
+                  id="btn-register-submit"
+                  disabled={!canSubmitRegister || loading}
+                >
+                  同意して次へ
+                </button>
+              </form>
+              <div className="auth-footer">
+                <button
+                  className="btn-secondary-link"
+                  id="back-to-login"
+                  onClick={() => { setMessage(''); setStep('login') }}
+                >
+                  ← ログインに戻る
+                </button>
+              </div>
             </div>
-          </form>
+          </section>
+        )}
+
+        {/* ========================================== */}
+        {/* 3. OTP VERIFY SCREEN                        */}
+        {/* ========================================== */}
+        {step === 'otp' && (
+          <section id="screen-verify" className="screen active">
+            <div className="auth-card">
+              <div className="auth-header">
+                <span className="vertical-bar"></span>
+                <h2>2段階認証</h2>
+              </div>
+              <div className="verify-desc">
+                <p id="verify-email-target">{otpEmail} 宛に認証コードを送信しました。</p>
+                <p>メールボックスを確認し、送られた8桁のコードを入力してください。</p>
+              </div>
+              <form id="form-verify" className="auth-form" onSubmit={handleVerifyOtp}>
+                <div className="form-group code-input-group">
+                  <input
+                    type="text"
+                    id="verify-code"
+                    inputMode="numeric"
+                    placeholder="8桁のコード"
+                    maxLength={8}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {message && (
+                  <div className={`form-message ${message.includes('エラー') ? 'is-error' : 'is-success'}`}>
+                    {message}
+                  </div>
+                )}
+
+                <button type="submit" className="btn-primary auth-submit-btn" disabled={loading}>
+                  認証する
+                </button>
+              </form>
+              <div className="auth-footer">
+                <button
+                  className="btn-secondary-link"
+                  onClick={() => { setMessage(''); setStep('login') }}
+                >
+                  ← ログインに戻る
+                </button>
+              </div>
+            </div>
+          </section>
         )}
 
       </div>
