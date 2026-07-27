@@ -97,10 +97,13 @@ export default function LoginPage() {
     setLoading(true)
     setMessage('')
 
+    // ログインか新規登録かで type を切り替える
+    const otpType = step === 'register' ? 'signup' : 'email' // ★ここを変更
+
     const { error } = await supabase.auth.verifyOtp({
       email: otpEmail,
       token: otp,
-      type: 'email',
+      type: otpType,
     })
 
     if (error) {
