@@ -60,6 +60,7 @@ export default function LoginPage() {
       setMessage(`エラー: 確認コードの送信に失敗しました。(${otpError.message})`)
     } else {
       setOtpEmail(loginEmail)
+      setOtpType('email') // ★ここを追加
       setMessage('')
       setStep('otp')
     }
@@ -86,6 +87,7 @@ export default function LoginPage() {
       setMessage(`エラー: ${error.message}`)
     } else {
       setOtpEmail(registerEmail)
+      setOtpType('signup') // ★ここを追加
       setMessage('')
       setStep('otp')
     }
