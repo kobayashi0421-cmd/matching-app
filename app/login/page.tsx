@@ -84,7 +84,9 @@ export default function LoginPage() {
     if (error) {
       setMessage(`エラー: ${error.message}`)
     } else {
-      setMessage('登録用のメールを送信しました！大学のメールボックスを確認して、リンクをクリックしてください。')
+      setOtpEmail(registerEmail)
+      setMessage('')
+      setStep('otp')
     }
     setLoading(false)
   }
