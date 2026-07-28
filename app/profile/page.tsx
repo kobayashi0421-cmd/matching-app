@@ -314,6 +314,52 @@ export default function ProfilePage() {
                   </label>
                 </div>
               </div>
+              <label>趣味タグ(最大6個)</label>
+              <div
+                id="hobby-grid-edit"
+                onClick={() => setTagMenuOpen((open) => !open)}
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', cursor: 'pointer', marginTop: '8px' }}
+              >
+                {Array.from({ length: 6 }).map((_, i) => {
+                  const tag = selectedTags[i]
+                  if (tag) {
+                    const label = tag.length >= 4 ? tag.substring(0, 3) + '...' : tag
+                    return (
+                      <div
+                        key={i}
+                        className="hobby-tag-pill active"
+                        style={{
+                          backgroundColor: '#3498db',
+                          color: 'white',
+                          borderRadius: '20px',
+                          padding: '6px 8px',
+                          textAlign: 'center',
+                          fontSize: '13px',
+                        }}
+                      >
+                        ＃{label}
+                      </div>
+                    )
+                  }
+                  return (
+                    <div
+                      key={i}
+                      className="hobby-tag-pill add-btn"
+                      style={{
+                        backgroundColor: '#38A1DB',
+                        color: 'white',
+                        borderRadius: '20px',
+                        padding: '4px 8px',
+                        textAlign: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      #〇〇〇〇
+                    </div>
+                  )
+                })}
+              </div>
 
               <form className="profile-form" onSubmit={handleSave}>
                 {/* 氏名・フリガナ(登録画面から引き継いだ実名。基本的にここでは表示のみの想定だが編集も可) */}
@@ -434,52 +480,7 @@ export default function ProfilePage() {
                   ref={hobbyWrapperRef}
                   style={{ width: '100%', maxWidth: '320px', marginTop: '24px', marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}
                 >
-                  <label>趣味タグ(最大6個)</label>
-                  <div
-                    id="hobby-grid-edit"
-                    onClick={() => setTagMenuOpen((open) => !open)}
-                    style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', cursor: 'pointer', marginTop: '8px' }}
-                  >
-                    {Array.from({ length: 6 }).map((_, i) => {
-                      const tag = selectedTags[i]
-                      if (tag) {
-                        const label = tag.length >= 4 ? tag.substring(0, 3) + '...' : tag
-                        return (
-                          <div
-                            key={i}
-                            className="hobby-tag-pill active"
-                            style={{
-                              backgroundColor: '#3498db',
-                              color: 'white',
-                              borderRadius: '20px',
-                              padding: '6px 8px',
-                              textAlign: 'center',
-                              fontSize: '13px',
-                            }}
-                          >
-                            ＃{label}
-                          </div>
-                        )
-                      }
-                      return (
-                        <div
-                          key={i}
-                          className="hobby-tag-pill add-btn"
-                          style={{
-                            backgroundColor: '#38A1DB',
-                            color: 'white',
-                            borderRadius: '20px',
-                            padding: '4px 8px',
-                            textAlign: 'center',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          #〇〇〇〇
-                        </div>
-                      )
-                    })}
-                  </div>
+
 
                   <div className="custom-dropdown" style={{ position: 'relative', marginTop: '8px' }}>
                     <div
