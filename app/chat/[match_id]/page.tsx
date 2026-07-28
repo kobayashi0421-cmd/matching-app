@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 // --- 型定義 ---
 type OtherProfile = {
@@ -58,6 +58,17 @@ export default function CombinedAppPage() {
   const [partner, setPartner] = useState<PartnerProfile | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
+  const searchParams = useSearchParams()
+  const queryMatchId = searchParams.get('match_id')
+
+  // URLに match_id がある場合にチャット画面へ切り替え
+  useEffect(() => {
+    if (queryMatchId) {
+      setActiveMatchId(queryMatchId)
+      setCurrentView('chat')
+    }
+  }, [queryMatchId])
+
 
   // 1. 初期ロード処理（ユーザー情報・おすすめユーザー・未読通知）
   useEffect(() => {
@@ -438,7 +449,7 @@ export default function CombinedAppPage() {
               <button
                 className="nav-tab"
                 id="nav-tab-talk"
-                onClick={() => router.push('/talk')}
+                onClick={() => router.push('/chat')}
                 aria-label="トーク"
               >
                 <div className="nav-tab-icon icon-chat"></div>
