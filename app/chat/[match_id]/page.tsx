@@ -191,7 +191,7 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
                 >
                   <i className="fa-solid fa-chevron-left"></i>
                 </button>
-                <h3 id="active-chat-partner-name">
+                <h3 id="active-chat-partner-name" style={{ color: '#000' }}>
                   {partner?.display_name || 'トーク相手'}
                 </h3>
                 <div className="header-right-actions"></div>
