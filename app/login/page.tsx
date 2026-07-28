@@ -248,12 +248,12 @@ export default function LoginPage() {
                     onChange={(e) => setTermsAgree(e.target.checked)}
                     required
                   />
-                  <label htmlFor="register-terms-agree">
-                    <Link href="/terms" className="btn-secondary-link" target="_blank">
-                      利用規約
-                    </Link>
-                    に同意します。
-                  </label>
+
+                  <Link href="/terms" className="btn-secondary-link" target="_blank">
+                    利用規約
+                  </Link>
+                  に同意します。
+
                 </div>
 
                 {/* プライバシーポリシー */}
