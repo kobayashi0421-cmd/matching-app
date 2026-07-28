@@ -314,51 +314,80 @@ export default function ProfilePage() {
                   </label>
                 </div>
               </div>
-
+              {/* 趣味タグ: 6マスグリッド + チェックボックスドロップダウン */}
               <div
-                id="hobby-grid-edit"
-                onClick={() => setTagMenuOpen((open) => !open)}
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', cursor: 'pointer', marginTop: '8px' }}
+                className="hobby-tags-wrapper"
+                ref={hobbyWrapperRef}
+                style={{
+                  width: '100%',
+                  maxWidth: '320px',
+                  marginTop: '24px',
+                  marginInline: 'auto',
+                  position: 'relative',
+                }}
               >
-                {Array.from({ length: 6 }).map((_, i) => {
-                  const tag = selectedTags[i]
-                  if (tag) {
-                    const label = tag.length >= 4 ? tag.substring(0, 3) + '...' : tag
+                {/* チェックボックスドロップダウン */}
+                <div className="custom-dropdown" style={{ position: 'relative', marginTop: '8px' }}>
+                  <div
+                    className={`dropdown-menu ${tagMenuOpen ? 'active' : ''}`}
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      top: 0,
+                      zIndex: 10,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    {HOBBY_OPTIONS.map((tag) => (
+                      <label key={tag} className="checkbox-option">
+                        <input
+                          type="checkbox"
+                          checked={selectedTags.includes(tag)}
+                          onChange={() => toggleTag(tag)}
+                        />
+                        {tag}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 6マスグリッド */}
+                <div
+                  id="hobby-grid-edit"
+                  onClick={() => setTagMenuOpen((open) => !open)}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    marginTop: '8px',
+                  }}
+                >
+                  {Array.from({ length: 6 }).map((_, i) => {
+                    const tag = selectedTags[i]
+                    const label = tag
+                      ? `＃${tag.length >= 4 ? `${tag.substring(0, 3)}...` : tag}`
+                      : '#〇〇〇〇'
+
                     return (
                       <div
                         key={i}
-                        className="hobby-tag-pill active"
+                        className={`hobby-tag-pill ${tag ? 'active' : 'add-btn'}`}
                         style={{
-                          backgroundColor: '#3498db',
+                          backgroundColor: tag ? '#3498db' : '#38A1DB',
                           color: 'white',
                           borderRadius: '20px',
-                          padding: '6px 8px',
+                          padding: tag ? '6px 8px' : '4px 8px',
                           textAlign: 'center',
-                          fontSize: '13px',
+                          fontSize: tag ? '13px' : '16px',
+                          fontWeight: tag ? 'normal' : 'bold',
                         }}
                       >
-                        ＃{label}
+                        {label}
                       </div>
                     )
-                  }
-                  return (
-                    <div
-                      key={i}
-                      className="hobby-tag-pill add-btn"
-                      style={{
-                        backgroundColor: '#38A1DB',
-                        color: 'white',
-                        borderRadius: '20px',
-                        padding: '4px 8px',
-                        textAlign: 'center',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      #〇〇〇〇
-                    </div>
-                  )
-                })}
+                  })}
+                </div>
               </div>
 
               <form className="profile-form" onSubmit={handleSave}>
@@ -474,32 +503,6 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* 趣味タグ: ユニフレ本来の6マスグリッド + チェックボックスドロップダウン */}
-                <div
-                  className="hobby-tags-wrapper"
-                  ref={hobbyWrapperRef}
-                  style={{ width: '100%', maxWidth: '320px', marginTop: '24px', marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}
-                >
-
-
-                  <div className="custom-dropdown" style={{ position: 'relative', marginTop: '8px' }}>
-                    <div
-                      className={`dropdown-menu ${tagMenuOpen ? 'active' : ''}`}
-                      style={{ position: 'absolute', width: '100%', top: 0, zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    >
-                      {HOBBY_OPTIONS.map((tag) => (
-                        <label key={tag} className="checkbox-option">
-                          <input
-                            type="checkbox"
-                            checked={selectedTags.includes(tag)}
-                            onChange={() => toggleTag(tag)}
-                          />
-                          {tag}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
 
                 <button type="submit" className="btn-primary submit-btn-full" disabled={saving}>
                   {saving ? '保存中...' : '保存する'}
