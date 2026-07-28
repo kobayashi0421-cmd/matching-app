@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -42,6 +42,8 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const hobbyWrapperRef = useRef<HTMLDivElement>(null)
   const [faculty, setFaculty] = useState('')
   const [department, setDepartment] = useState('')
   const [year, setYear] = useState('')
@@ -143,6 +145,24 @@ export default function ProfilePage() {
     init()
   }, [router, supabase])
 
+  // 趣味タグのグリッド/メニュー枠の外側をクリックしたらメニューを閉じる(ユニフレの元の挙動と同じ)
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (hobbyWrapperRef.current && !hobbyWrapperRef.current.contains(e.target as Node)) {
+        setTagMenuOpen(false)
+      }
+    }
+    document.addEventListener('click', handleOutsideClick)
+    return () => document.removeEventListener('click', handleOutsideClick)
+  }, [])
+
+  // トーストを数秒後に自動で消す
+  useEffect(() => {
+    if (!toastMessage) return
+    const timer = setTimeout(() => setToastMessage(null), 3000)
+    return () => clearTimeout(timer)
+  }, [toastMessage])
+
   // 学部を変えたら学科の選択肢を作り直し、今の学科がその学部に無ければリセット
   const handleFacultyChange = (value: string) => {
     setFaculty(value)
@@ -153,9 +173,16 @@ export default function ProfilePage() {
   }
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    )
+    setSelectedTags((prev) => {
+      if (prev.includes(tag)) {
+        return prev.filter((t) => t !== tag)
+      }
+      if (prev.length >= 6) {
+        setToastMessage('趣味・タグは最大6個まで選択可能です。')
+        return prev
+      }
+      return [...prev, tag]
+    })
   }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -239,6 +266,14 @@ export default function ProfilePage() {
   return (
     <div className="outer-wrap">
       <div className="app-container">
+        {toastMessage && (
+          <div className="toast-container">
+            <div className="toast warning">
+              <i className="fa-solid fa-triangle-exclamation"></i>
+              <span>{toastMessage}</span>
+            </div>
+          </div>
+        )}
         <section id="screen-profile-edit" className="screen active">
           <header className="main-header border-bottom">
             <div className="header-left"></div>
@@ -393,22 +428,64 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* 趣味タグ: チェックボックス選択式ドロップダウン */}
-                <div className="hobby-tags-wrapper" style={{ position: 'relative' }}>
-                  <label>趣味タグ</label>
-                  <div className="custom-dropdown">
+                {/* 趣味タグ: ユニフレ本来の6マスグリッド + チェックボックスドロップダウン */}
+                <div
+                  className="hobby-tags-wrapper"
+                  ref={hobbyWrapperRef}
+                  style={{ width: '100%', maxWidth: '320px', marginTop: '24px', marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}
+                >
+                  <label>趣味タグ(最大6個)</label>
+                  <div
+                    id="hobby-grid-edit"
+                    onClick={() => setTagMenuOpen((open) => !open)}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', cursor: 'pointer', marginTop: '8px' }}
+                  >
+                    {Array.from({ length: 6 }).map((_, i) => {
+                      const tag = selectedTags[i]
+                      if (tag) {
+                        const label = tag.length >= 4 ? tag.substring(0, 3) + '...' : tag
+                        return (
+                          <div
+                            key={i}
+                            className="hobby-tag-pill active"
+                            style={{
+                              backgroundColor: '#3498db',
+                              color: 'white',
+                              borderRadius: '20px',
+                              padding: '6px 8px',
+                              textAlign: 'center',
+                              fontSize: '13px',
+                            }}
+                          >
+                            ＃{label}
+                          </div>
+                        )
+                      }
+                      return (
+                        <div
+                          key={i}
+                          className="hobby-tag-pill add-btn"
+                          style={{
+                            backgroundColor: '#38A1DB',
+                            color: 'white',
+                            borderRadius: '20px',
+                            padding: '4px 8px',
+                            textAlign: 'center',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          #〇〇〇〇
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className="custom-dropdown" style={{ position: 'relative', marginTop: '8px' }}>
                     <div
-                      className="dropdown-trigger"
-                      onClick={() => setTagMenuOpen((open) => !open)}
+                      className={`dropdown-menu ${tagMenuOpen ? 'active' : ''}`}
+                      style={{ position: 'absolute', width: '100%', top: 0, zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                     >
-                      {selectedTags.length > 0 ? (
-                        <span>{selectedTags.join(' / ')}</span>
-                      ) : (
-                        <span className="trigger-placeholder">趣味タグを選択してください</span>
-                      )}
-                      <i className={`fa-solid fa-chevron-${tagMenuOpen ? 'up' : 'down'}`}></i>
-                    </div>
-                    <div className={`dropdown-menu ${tagMenuOpen ? 'active' : ''}`}>
                       {HOBBY_OPTIONS.map((tag) => (
                         <label key={tag} className="checkbox-option">
                           <input
@@ -421,16 +498,6 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </div>
-                  {selectedTags.length > 0 && (
-                    <div className="selected-tags-container">
-                      {selectedTags.map((tag) => (
-                        <span key={tag} className="tag-badge">
-                          {tag}
-                          <i className="fa-solid fa-xmark" onClick={() => toggleTag(tag)}></i>
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <button type="submit" className="btn-primary submit-btn-full" disabled={saving}>
