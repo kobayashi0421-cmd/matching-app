@@ -83,7 +83,7 @@ export default function ProfilePage() {
           .from('profiles')
           .insert({ id: user.id, full_name: metaFullName, furigana: metaFurigana })
           .select()
-          .single()
+          .maybeSingle()
 
         if (insertError) {
           console.error('プロフィール作成エラー:', insertError)
