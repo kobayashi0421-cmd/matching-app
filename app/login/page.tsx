@@ -239,6 +239,7 @@ export default function LoginPage() {
                   />
                 </div>
 
+                {/* ─── 修正後 ─── */}
                 <div className="terms-checkbox-group">
                   <input
                     type="checkbox"
@@ -247,19 +248,15 @@ export default function LoginPage() {
                     onChange={(e) => setTermsAgree(e.target.checked)}
                     required
                   />
-
-
-
-                  <Link href="/terms" className="btn-secondary-link">
-                    利用規約
-                  </Link>
-                  <label htmlFor="register-privacy-agree">
-                    <span>に同意します。</span>
+                  <label htmlFor="register-terms-agree">
+                    <Link href="/terms" className="btn-secondary-link" target="_blank">
+                      利用規約
+                    </Link>
+                    に同意します。
                   </label>
                 </div>
 
-
-                <div className="form-group terms-checkbox-group">
+                <div className="terms-checkbox-group">
                   <input
                     type="checkbox"
                     id="register-privacy-agree"
@@ -268,7 +265,10 @@ export default function LoginPage() {
                     required
                   />
                   <label htmlFor="register-privacy-agree">
-                    <button type="button" className="btn-secondary-link">プライバシーポリシー</button>に同意します。
+                    <Link href="/privacy" className="btn-secondary-link" target="_blank">
+                      プライバシーポリシー
+                    </Link>
+                    に同意します。
                   </label>
                 </div>
 
