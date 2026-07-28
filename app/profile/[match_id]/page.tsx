@@ -56,6 +56,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
 
+
+
   // 退会処理用のステート
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -327,7 +329,17 @@ export default function ProfilePage() {
             <div className="header-center">
               <h2 className="page-title">マイプロフィール</h2>
             </div>
-            <div className="header-right">
+            <div className="header-right" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {/* ★退会ボタンを追加 */}
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="btn-secondary-link"
+                style={{ color: '#999', fontSize: '13px' }}
+              >
+                {isDeleting ? '削除中...' : '退会'}
+              </button>
+
               <button
                 onClick={handleLogout}
                 className="btn-secondary-link"
