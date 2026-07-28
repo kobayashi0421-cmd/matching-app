@@ -329,6 +329,7 @@ export default function ProfilePage() {
             <div className="header-center">
               <h2 className="page-title">マイプロフィール</h2>
             </div>
+            <div className="header-right"></div> {/* ← これを追加 */}
             <div className="header-right" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               {/* ★退会ボタンを追加 */}
               <button
