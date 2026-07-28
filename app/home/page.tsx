@@ -23,9 +23,13 @@ export default function HomePage() {
   const [matchedPartner, setMatchedPartner] = useState<OtherProfile | null>(null)
   const [myAvatar, setMyAvatar] = useState<string | null>(null)
 
+  // 未読通知があるかどうかを保持
+  const [hasUnread, setHasUnread] = useState(false)
+
   const supabase = createClient()
   const router = useRouter()
 
+  // 1. 初期ロード処理
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -35,6 +39,7 @@ export default function HomePage() {
       }
       setUserId(user.id)
 
+      // プロフィール画像取得
       const { data: myProfile } = await supabase
         .from('profiles')
         .select('avatar_url')
@@ -42,7 +47,18 @@ export default function HomePage() {
         .single()
       setMyAvatar(myProfile?.avatar_url ?? null)
 
-      // すでにいいね済みの相手は除外(再表示させない)
+      // 未読通知の確認
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+
+      if (count && count > 0) {
+        setHasUnread(true)
+      }
+
+      // おすすめユーザー一覧の取得
       const { data: myLikes } = await supabase
         .from('likes')
         .select('to_user_id')
@@ -72,6 +88,32 @@ export default function HomePage() {
     init()
   }, [router, supabase])
 
+  // 2. リアルタイム通知（Supabase Realtime）の監視
+  useEffect(() => {
+    if (!userId) return
+
+    const channel = supabase
+      .channel('realtime_notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          // 新規通知が届いたら即座に赤丸をつける
+          setHasUnread(true)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [userId, supabase])
+
   const handleLike = async (target: OtherProfile) => {
     if (!userId || likingId) return
     setLikingId(target.id)
@@ -86,7 +128,6 @@ export default function HomePage() {
       return
     }
 
-    // 相互いいねでマッチが成立したか確認(DBトリガーがすでに matches 行を作っているはず)
     const u1 = userId < target.id ? userId : target.id
     const u2 = userId < target.id ? target.id : userId
 
@@ -182,7 +223,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 下部ナビゲーション (4つのタブに更新) */}
+        {/* 下部ナビゲーション */}
         <nav className="app-nav-bar" id="app-bottom-nav">
           <button
             className="nav-tab active"
@@ -192,6 +233,7 @@ export default function HomePage() {
           >
             <div className="nav-tab-icon icon-home"></div>
           </button>
+
           <button
             className="nav-tab relative"
             id="nav-tab-bell"
@@ -199,8 +241,14 @@ export default function HomePage() {
             aria-label="通知"
           >
             <div className="nav-tab-icon icon-bell"></div>
-            <span className="bell-badge" id="bell-badge-nav"></span>
+            {/* 未読があるときのみ赤丸バッジを表示 */}
+            <span
+              className="bell-badge"
+              id="bell-badge-nav"
+              style={{ display: hasUnread ? 'block' : 'none' }}
+            ></span>
           </button>
+
           <button
             className="nav-tab"
             id="nav-tab-talk"
@@ -219,7 +267,7 @@ export default function HomePage() {
           </button>
         </nav>
 
-        {/* マッチング成立モーダル */}
+        {/* マッチングモーダル */}
         {matchedPartner && (
           <div className="modal-backdrop active">
             <div className="match-modal">
