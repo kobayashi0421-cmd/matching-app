@@ -260,6 +260,7 @@ export default function ProfilePage() {
 
   const availableDepartments = faculty ? (FACULTY_DEPARTMENTS[faculty] ?? []) : []
 
+
   if (loading) {
     return (
       <div className="outer-wrap">
