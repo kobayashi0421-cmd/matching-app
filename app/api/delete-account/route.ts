@@ -34,10 +34,17 @@ export async function POST(req: Request) {
       .single();
 
     if (profile?.avatar_url) {
-      // avatar_urlの末尾のファイル名（例: "uuid-xxxx.png"）を抽出
-      const fileName = profile.avatar_url.split('/').pop();
-      if (fileName) {
-        await supabaseAdmin.storage.from('avatars').remove([fileName]);
+      // avatar_url は公開URL全体（例: https://xxx.supabase.co/storage/v1/object/public/avatars/{userId}/avatar.png）
+      // アップロード時のパスは "{userId}/avatar.拡張子" というフォルダ構造になっているため、
+      // 末尾のファイル名だけでなく "avatars/" より後ろの部分（フォルダ込み）を丸ごと取り出す必要がある。
+      const marker = '/avatars/';
+      const markerIndex = profile.avatar_url.indexOf(marker);
+      const filePath = markerIndex !== -1
+        ? profile.avatar_url.slice(markerIndex + marker.length)
+        : null;
+
+      if (filePath) {
+        await supabaseAdmin.storage.from('avatars').remove([filePath]);
       }
     }
 
