@@ -524,7 +524,7 @@ export default function ProfilePage() {
                       <div
                         key={m.match_id}
                         className="chat-item"
-                        onClick={() => router.push(`/chat/${m.match_id}`)}
+                        onClick={() => router.push(`/talk`)}
                       >
                         <div className="chat-item-avatar">
                           <img src={m.partner.avatar_url || '/default-avatar.png'} alt={m.partner.display_name || ''} />
@@ -549,7 +549,7 @@ export default function ProfilePage() {
 
           {/* 下部ナビゲーションバー追加 */}
           <nav className="app-nav-bar" id="app-bottom-nav">
-            <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/home')}>
+            <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/')}>
               <div className="nav-tab-icon icon-home"></div>
             </button>
             <button
