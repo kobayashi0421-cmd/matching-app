@@ -110,7 +110,14 @@ export default function LoginPage() {
     if (error) {
       setMessage(`エラー: コードが正しくないか、期限切れです。(${error.message})`)
     } else {
-      router.push('/home')
+      // ★ ここを修正！
+      // 新規登録の時だけ「/personality-test（性格診断）」へ移動させます
+      if (otpType === 'signup') {
+        router.push('/personality-test')
+      } else {
+        // 2回目以降の通常のログイン時はそのままホーム画面へ
+        router.push('/home')
+      }
       router.refresh()
     }
     setLoading(false)

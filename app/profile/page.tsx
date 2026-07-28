@@ -196,6 +196,7 @@ export default function ProfilePage() {
     setAvatarPreview(URL.createObjectURL(file))
   }
 
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userId) return
