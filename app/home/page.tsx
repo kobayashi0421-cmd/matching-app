@@ -146,11 +146,8 @@ export default function HomePage() {
                       className="user-card"
                       style={{ cursor: 'pointer' }}
                       onClick={(e) => {
-                        // ボタンを押した時はカード全体のクリック処理（画面遷移）を発生させない
                         if ((e.target as HTMLElement).closest('button')) return;
-
-                        // 相手の詳細画面（またはチャット等）に移動する
-                        router.push(`/user/${u.id}`); // ※移動したいパスに合わせて調整してください
+                        router.push(`/user/${u.id}`);
                       }}
                     >
                       <div className="card-image-box">
@@ -185,15 +182,39 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 下部ナビゲーション */}
-        <nav className="app-nav-bar">
-          <button className="nav-tab active" onClick={() => router.push('/home')}>
+        {/* 下部ナビゲーション (4つのタブに更新) */}
+        <nav className="app-nav-bar" id="app-bottom-nav">
+          <button
+            className="nav-tab active"
+            id="nav-tab-home"
+            onClick={() => router.push('/home')}
+            aria-label="ホーム"
+          >
             <div className="nav-tab-icon icon-home"></div>
           </button>
-          <button className="nav-tab" onClick={() => router.push('/profile')}>
+          <button
+            className="nav-tab relative"
+            id="nav-tab-bell"
+            onClick={() => router.push('/notifications')}
+            aria-label="通知"
+          >
+            <div className="nav-tab-icon icon-bell"></div>
+            <span className="bell-badge" id="bell-badge-nav"></span>
+          </button>
+          <button
+            className="nav-tab"
+            id="nav-tab-talk"
+            onClick={() => router.push('/talk')}
+            aria-label="トーク"
+          >
             <div className="nav-tab-icon icon-chat"></div>
           </button>
-          <button className="nav-tab" onClick={() => router.push('/profile')}>
+          <button
+            className="nav-tab"
+            id="nav-tab-profile"
+            onClick={() => router.push('/settings')}
+            aria-label="設定"
+          >
             <div className="nav-tab-icon icon-person"></div>
           </button>
         </nav>
@@ -223,7 +244,7 @@ export default function HomePage() {
                   className="btn-primary"
                   onClick={() => {
                     setMatchedPartner(null)
-                    router.push('/profile')
+                    router.push('/talk')
                   }}
                 >
                   チャットを送る
