@@ -57,6 +57,7 @@ export default function PersonalityTestPage() {
   }
 
   // 結果の送信・Supabase保存処理
+  // 結果の送信・Supabase保存処理
   const handleSubmit = async () => {
     setLoading(true)
 
@@ -71,20 +72,29 @@ export default function PersonalityTestPage() {
 
     const resultType = calculateResult()
 
+    // 1. undefined 対策として fallback (?? null) を設定
+    const updates = {
+      id: user.id,
+      full_name: user.user_metadata?.full_name ?? null,
+      furigana: user.user_metadata?.furigana ?? null,
+      personality_type: resultType,
+      updated_at: new Date().toISOString(),
+    }
+
     // Supabaseの profiles テーブルに診断結果を書き込む (upsert)
     const { error } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
-        full_name: user.user_metadata?.full_name,
-        furigana: user.user_metadata?.furigana,
-        personality_type: resultType,
-        updated_at: new Date().toISOString(),
-      })
+      .upsert(updates)
 
     if (error) {
-      console.error('診断結果の保存エラー:', error)
-      alert('診断結果の保存に失敗しました。')
+      // 2. エラーの原因を一発で確認できるようログを詳細化
+      console.error('診断結果の保存エラー詳細:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+      alert(`診断結果の保存に失敗しました: ${error.message}`)
     } else {
       // 保存完了後にホームへ遷移
       router.push('/home')
