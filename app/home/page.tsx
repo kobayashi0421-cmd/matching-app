@@ -260,7 +260,7 @@ export default function HomePage() {
           <button
             className="nav-tab"
             id="nav-tab-profile"
-            onClick={() => router.push('/settings')}
+            onClick={() => router.push('/profile')}
             aria-label="設定"
           >
             <div className="nav-tab-icon icon-person"></div>
