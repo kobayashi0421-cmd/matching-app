@@ -489,44 +489,8 @@ export default function CombinedAppPage() {
           </section>
         )}
 
-        {/* ================= マッチング成立モーダル ================= */}
-        {matchedPartner && (
-          <div className="modal-backdrop active">
-            <div className="match-modal">
-              <div className="match-heart-animation">
-                <i className="fa-solid fa-heart pulse"></i>
-              </div>
-              <h2>マッチング成立！</h2>
-              <p>お互いにいいね！を送り合いました。<br />チャットでメッセージを送ってみましょう！</p>
 
-              <div className="match-users-row">
-                <div className="match-user-avatar">
-                  <img src={myAvatar || '/default-avatar.png'} alt="自分" />
-                </div>
-                <div className="match-divider"><i className="fa-solid fa-bolt"></i></div>
-                <div className="match-user-avatar">
-                  <img src={matchedPartner.profile.avatar_url || '/default-avatar.png'} alt="相手" />
-                </div>
-              </div>
 
-              <div className="match-actions">
-                <button
-                  className="btn-primary"
-                  onClick={() => {
-                    const { matchId, profile } = matchedPartner
-                    setMatchedPartner(null)
-                    openChat(matchId, profile)
-                  }}
-                >
-                  チャットを送る
-                </button>
-                <button className="btn-secondary" onClick={() => setMatchedPartner(null)}>
-                  閉じる
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
