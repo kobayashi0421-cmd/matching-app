@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -10,6 +10,12 @@ type Profile = {
   avatar_url: string | null
   bio: string | null
   hobby_tags: string[] | null
+  full_name: string | null
+  furigana: string | null
+  faculty: string | null
+  department: string | null
+  year: string | null
+  gender: string | null
 }
 
 type MatchWithProfile = {
@@ -17,12 +23,33 @@ type MatchWithProfile = {
   partner: Profile
 }
 
+const HOBBY_OPTIONS = ['旅行', 'ゲーム', '映画', '読書', 'ドライブ', 'スポーツ', 'キャンプ', 'コンピュータ']
+
+const FACULTY_DEPARTMENTS: Record<string, string[]> = {
+  '情報メディア学部': ['情報メディア学科'],
+  'システム情報学部': ['システム情報学科'],
+  '医療情報学部': ['医療情報学科'],
+  '経営情報学部': ['経営情報学科', '先端経営学科', 'スポーツマネジメント学科'],
+}
+
+const YEAR_OPTIONS = ['1年', '2年', '3年', '4年']
+const GENDER_OPTIONS = ['男性', '女性', 'その他']
+
 export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [displayName, setDisplayName] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [furigana, setFurigana] = useState('')
   const [bio, setBio] = useState('')
-  const [hobbyTagsInput, setHobbyTagsInput] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [tagMenuOpen, setTagMenuOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const hobbyWrapperRef = useRef<HTMLDivElement>(null)
+  const [faculty, setFaculty] = useState('')
+  const [department, setDepartment] = useState('')
+  const [year, setYear] = useState('')
+  const [gender, setGender] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [matches, setMatches] = useState<MatchWithProfile[]>([])
@@ -41,41 +68,34 @@ export default function ProfilePage() {
       }
       setUserId(user.id)
 
-      // 自分のプロフィールを取得
-      const { data: profileData, error: profileError } = await supabase
+      // 1. プロフィール取得（修正箇所）
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (profileError && profileError.code === 'PGRST116') {
-        // プロフィール行がまだ無いので新規作成する
+      if (!profileData) {
+        // プロフィールが存在しない場合は新規作成
+        const metaFullName = (user.user_metadata?.full_name as string) ?? ''
+        const metaFurigana = (user.user_metadata?.furigana as string) ?? ''
+
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
-          .insert({ id: user.id })
+          .insert({ id: user.id, full_name: metaFullName, furigana: metaFurigana })
           .select()
-          .single()
+          .maybeSingle()
 
         if (insertError) {
           console.error('プロフィール作成エラー:', insertError)
         } else if (newProfile) {
-          setProfile(newProfile)
-          setDisplayName(newProfile.display_name ?? '')
-          setBio(newProfile.bio ?? '')
-          setHobbyTagsInput((newProfile.hobby_tags ?? []).join(', '))
-          setAvatarPreview(newProfile.avatar_url)
+          applyProfileToState(newProfile)
         }
-      } else if (profileError) {
-        console.error('プロフィール取得エラー:', profileError)
-      } else if (profileData) {
-        setProfile(profileData)
-        setDisplayName(profileData.display_name ?? '')
-        setBio(profileData.bio ?? '')
-        setHobbyTagsInput((profileData.hobby_tags ?? []).join(', '))
-        setAvatarPreview(profileData.avatar_url)
+      } else {
+        applyProfileToState(profileData)
       }
 
-      // マッチ相手一覧を取得
+      // 2. マッチ相手一覧の取得
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select('*')
@@ -90,7 +110,7 @@ export default function ProfilePage() {
 
         const { data: partnerProfiles, error: partnerError } = await supabase
           .from('profiles')
-          .select('id, display_name, avatar_url, bio, hobby_tags')
+          .select('id, display_name, avatar_url, bio, hobby_tags, full_name, furigana, faculty, department, year, gender')
           .in('id', partnerIds)
 
         if (partnerError) {
@@ -112,10 +132,62 @@ export default function ProfilePage() {
       setLoading(false)
     }
 
+    const applyProfileToState = (p: Profile) => {
+      setProfile(p)
+      setDisplayName(p.display_name ?? '')
+      setFullName(p.full_name ?? '')
+      setFurigana(p.furigana ?? '')
+      setBio(p.bio ?? '')
+      setSelectedTags(p.hobby_tags ?? [])
+      setFaculty(p.faculty ?? '')
+      setDepartment(p.department ?? '')
+      setYear(p.year ?? '')
+      setGender(p.gender ?? '')
+      setAvatarPreview(p.avatar_url)
+    }
+
     init()
   }, [router, supabase])
 
-  // アバター画像選択時のプレビュー
+  // メニュー枠外クリックで閉じる
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (hobbyWrapperRef.current && !hobbyWrapperRef.current.contains(e.target as Node)) {
+        setTagMenuOpen(false)
+      }
+    }
+    document.addEventListener('click', handleOutsideClick)
+    return () => document.removeEventListener('click', handleOutsideClick)
+  }, [])
+
+  // トースト自動削除
+  useEffect(() => {
+    if (!toastMessage) return
+    const timer = setTimeout(() => setToastMessage(null), 3000)
+    return () => clearTimeout(timer)
+  }, [toastMessage])
+
+  const handleFacultyChange = (value: string) => {
+    setFaculty(value)
+    const depts = FACULTY_DEPARTMENTS[value] ?? []
+    if (!depts.includes(department)) {
+      setDepartment('')
+    }
+  }
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => {
+      if (prev.includes(tag)) {
+        return prev.filter((t) => t !== tag)
+      }
+      if (prev.length >= 6) {
+        setToastMessage('趣味・タグは最大6個まで選択可能です。')
+        return prev
+      }
+      return [...prev, tag]
+    })
+  }
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -123,14 +195,13 @@ export default function ProfilePage() {
     setAvatarPreview(URL.createObjectURL(file))
   }
 
-  // プロフィール保存処理
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!userId) return
     setSaving(true)
 
     let avatarUrl = profile?.avatar_url ?? null
 
-    // 新しい画像が選択されていればアップロード
     if (avatarFile) {
       const fileExt = avatarFile.name.split('.').pop()
       const filePath = `${userId}/avatar.${fileExt}`
@@ -153,18 +224,19 @@ export default function ProfilePage() {
       avatarUrl = publicUrlData.publicUrl
     }
 
-    const hobbyTags = hobbyTagsInput
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0)
-
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
         display_name: displayName,
+        full_name: fullName,
+        furigana: furigana,
         bio: bio,
-        hobby_tags: hobbyTags,
+        hobby_tags: selectedTags,
         avatar_url: avatarUrl,
+        faculty: faculty || null,
+        department: department || null,
+        year: year || null,
+        gender: gender || null,
       })
       .eq('id', userId)
 
@@ -184,122 +256,318 @@ export default function ProfilePage() {
     router.push('/login')
   }
 
+  const availableDepartments = faculty ? (FACULTY_DEPARTMENTS[faculty] ?? []) : []
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
-        読み込み中...
+      <div className="outer-wrap">
+        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: 'var(--dark-light)' }}>読み込み中...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-8">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-800">マイプロフィール</h1>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-red-500 font-medium"
-        >
-          ログアウト
-        </button>
-      </header>
-
-      {/* プロフィール編集 */}
-      <section className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-        <div className="flex flex-col items-center gap-3">
-          <img
-            src={avatarPreview || '/default-avatar.png'}
-            alt="アバター"
-            className="w-24 h-24 rounded-full object-cover border"
-          />
-          <label className="text-sm text-blue-500 cursor-pointer">
-            画像を変更
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
-          </label>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            表示名
-          </label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            自己紹介
-          </label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={4}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            趣味タグ(カンマ区切り)
-          </label>
-          <input
-            type="text"
-            value={hobbyTagsInput}
-            onChange={(e) => setHobbyTagsInput(e.target.value)}
-            placeholder="例: 読書, 映画鑑賞, カフェ巡り"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
-          />
-        </div>
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-blue-500 text-white rounded-full py-2 font-bold disabled:opacity-50"
-        >
-          {saving ? '保存中...' : '保存する'}
-        </button>
-      </section>
-
-      {/* マッチ相手一覧 */}
-      <section>
-        <h2 className="text-lg font-bold text-gray-800 mb-3">マッチした相手</h2>
-        {matches.length === 0 ? (
-          <p className="text-gray-500 text-sm">まだマッチした相手がいません</p>
-        ) : (
-          <div className="space-y-2">
-            {matches.map((m) => (
-              <button
-                key={m.match_id}
-                onClick={() => router.push(`/chat/${m.match_id}`)}
-                className="w-full flex items-center gap-3 bg-white rounded-xl shadow-sm p-3 hover:bg-gray-50 transition-colors"
-              >
-                <img
-                  src={m.partner.avatar_url || '/default-avatar.png'}
-                  alt={m.partner.display_name || ''}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div className="text-left">
-                  <p className="font-medium text-gray-800">
-                    {m.partner.display_name || '名前未設定'}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {(m.partner.hobby_tags ?? []).slice(0, 3).join(' / ')}
-                  </p>
-                </div>
-              </button>
-            ))}
+    <div className="outer-wrap">
+      <div className="app-container">
+        {toastMessage && (
+          <div className="toast-container">
+            <div className="toast warning">
+              <i className="fa-solid fa-triangle-exclamation"></i>
+              <span>{toastMessage}</span>
+            </div>
           </div>
         )}
-      </section>
+        <section id="screen-profile-edit" className="screen active">
+          <header className="main-header border-bottom">
+            <div className="header-left"></div>
+            <div className="header-center">
+              <h2 className="page-title">マイプロフィール</h2>
+            </div>
+            <div className="header-right">
+              <button
+                onClick={handleLogout}
+                className="btn-secondary-link"
+                style={{ color: '#e74c3c' }}
+              >
+                ログアウト
+              </button>
+            </div>
+          </header>
+
+          <div className="profile-card settings-card">
+            <div className="profile-content-scroll">
+              {/* アバター編集 */}
+              <div className="profile-banner">
+                <div className="avatar-edit-container">
+                  <div className="avatar-preview-circle" id="btn-upload-avatar-edit">
+                    <img
+                      src={avatarPreview || '/default-avatar.png'}
+                      alt="アバタープレビュー"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                  <label className="camera-badge">
+                    <i className="fa-solid fa-camera"></i>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* 趣味タグ */}
+              <div
+                className="hobby-tags-wrapper"
+                ref={hobbyWrapperRef}
+                style={{
+                  width: '100%',
+                  maxWidth: '320px',
+                  marginTop: '24px',
+                  marginInline: 'auto',
+                  position: 'relative',
+                }}
+              >
+                <div className="custom-dropdown" style={{ position: 'relative', marginTop: '8px' }}>
+                  <div
+                    className={`dropdown-menu ${tagMenuOpen ? 'active' : ''}`}
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      top: 0,
+                      zIndex: 10,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    {HOBBY_OPTIONS.map((tag) => (
+                      <label key={tag} className="checkbox-option">
+                        <input
+                          type="checkbox"
+                          checked={selectedTags.includes(tag)}
+                          onChange={() => toggleTag(tag)}
+                        />
+                        {tag}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  id="hobby-grid-edit"
+                  onClick={() => setTagMenuOpen((open) => !open)}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    marginTop: '8px',
+                  }}
+                >
+                  {Array.from({ length: 6 }).map((_, i) => {
+                    const tag = selectedTags[i]
+                    const label = tag
+                      ? `＃${tag.length >= 4 ? `${tag.substring(0, 3)}...` : tag}`
+                      : '#〇〇〇〇'
+
+                    return (
+                      <div
+                        key={i}
+                        className={`hobby-tag-pill ${tag ? 'active' : 'add-btn'}`}
+                        style={{
+                          backgroundColor: tag ? '#3498db' : '#38A1DB',
+                          color: 'white',
+                          borderRadius: '20px',
+                          padding: tag ? '6px 8px' : '4px 8px',
+                          textAlign: 'center',
+                          fontSize: tag ? '13px' : '16px',
+                          fontWeight: tag ? 'normal' : 'bold',
+                        }}
+                      >
+                        {label}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <form className="profile-form" onSubmit={handleSave}>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-fullname">氏名</label>
+                    <input
+                      type="text"
+                      id="settings-profile-fullname"
+                      placeholder="氏名を入力してください"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-furigana">氏名（フリガナ）</label>
+                    <input
+                      type="text"
+                      id="settings-profile-furigana"
+                      placeholder="氏名（フリガナ）を入力してください"
+                      value={furigana}
+                      onChange={(e) => setFurigana(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="settings-profile-nickname">表示名</label>
+                  <input
+                    type="text"
+                    id="settings-profile-nickname"
+                    placeholder="表示名を入力してください"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-faculty">学部</label>
+                    <select
+                      id="settings-profile-faculty"
+                      value={faculty}
+                      onChange={(e) => handleFacultyChange(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>学部を選択してください</option>
+                      {Object.keys(FACULTY_DEPARTMENTS).map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-department">学科</label>
+                    <select
+                      id="settings-profile-department"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      disabled={!faculty}
+                      required
+                    >
+                      <option value="" disabled>
+                        {faculty ? '学科を選択してください' : '学部を先に選択してください'}
+                      </option>
+                      {availableDepartments.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-year">学年</label>
+                    <select
+                      id="settings-profile-year"
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>学年を選択してください</option>
+                      {YEAR_OPTIONS.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-gender">性別</label>
+                    <select
+                      id="settings-profile-gender"
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>性別を選択してください</option>
+                      {GENDER_OPTIONS.map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="settings-profile-bio">自己紹介</label>
+                  <textarea
+                    id="settings-profile-bio"
+                    rows={4}
+                    placeholder="自己紹介や趣味などを自由に記入してください（任意）"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                  />
+                </div>
+
+                <button type="submit" className="btn-primary submit-btn-full" disabled={saving}>
+                  {saving ? '保存中...' : '保存する'}
+                </button>
+              </form>
+
+              {/* マッチした相手一覧 */}
+              <div style={{ marginTop: '35px', marginBottom: '80px' }}>
+                <h3 className="section-title">マッチした相手</h3>
+                {matches.length === 0 ? (
+                  <p style={{ fontSize: '13px', color: 'var(--dark-light)', padding: '10px 0' }}>
+                    まだマッチした相手がいません
+                  </p>
+                ) : (
+                  <div className="chat-list" style={{ border: '1px solid var(--secondary-border)', borderRadius: '8px', overflow: 'hidden' }}>
+                    {matches.map((m) => (
+                      <div
+                        key={m.match_id}
+                        className="chat-item"
+                        onClick={() => router.push(`/chat/${m.match_id}`)}
+                      >
+                        <div className="chat-item-avatar">
+                          <img src={m.partner.avatar_url || '/default-avatar.png'} alt={m.partner.display_name || ''} />
+                        </div>
+                        <div className="chat-item-info">
+                          <div className="chat-item-header">
+                            <span className="chat-item-name">{m.partner.display_name || '名前未設定'}</span>
+                          </div>
+                          <div className="chat-item-preview-row">
+                            <span className="chat-item-preview">
+                              {(m.partner.hobby_tags ?? []).slice(0, 3).join(' / ')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 下部ナビゲーションバー追加 */}
+          <nav className="app-nav-bar" id="app-bottom-nav">
+            <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/home')}>
+              <div className="nav-tab-icon icon-home"></div>
+            </button>
+            <button
+              className="nav-tab relative"
+              aria-label="通知"
+              onClick={() => router.push('/notifications')}
+            >
+              <div className="nav-tab-icon icon-bell"></div>
+            </button>
+            <button className="nav-tab" aria-label="トーク" onClick={() => router.push('/talk')}>
+              <div className="nav-tab-icon icon-chat"></div>
+            </button>
+            <button className="nav-tab active" aria-label="設定" onClick={() => router.push('/profile')}>
+              <div className="nav-tab-icon icon-person"></div>
+            </button>
+          </nav>
+        </section>
+      </div>
     </div>
   )
 }
