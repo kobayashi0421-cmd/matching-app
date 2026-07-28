@@ -26,12 +26,11 @@ export default function LoginPage() {
   // otp
   const [otp, setOtp] = useState('')
   const [otpEmail, setOtpEmail] = useState('')
-  const [otpType, setOtpType] = useState<'email' | 'signup'>('email') // ★ここを追加
+  const [otpType, setOtpType] = useState<'email' | 'signup'>('email')
 
   const router = useRouter()
   const supabase = createClient()
 
-  // ログイン(1段階目: パスワード確認 → 2段階目: OTP送信)
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -60,26 +59,29 @@ export default function LoginPage() {
       setMessage(`エラー: 確認コードの送信に失敗しました。(${otpError.message})`)
     } else {
       setOtpEmail(loginEmail)
-      setOtpType('email') // ★ここを追加
+      setOtpType('email')
       setMessage('')
       setStep('otp')
     }
     setLoading(false)
   }
 
-  // 新規登録
+  // 新規登録(氏名・フリガナを user_metadata として一緒に送る)
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
 
-    // TODO: registerName / registerFurigana は現状 profiles テーブルに対応カラムが無いため未保存。
-    // auth/callback 側で profiles へ初期値として書き込む処理を追加する必要あり。
     const { error } = await supabase.auth.signUp({
       email: registerEmail,
       password: registerPassword,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
+        data: {
+          // ★ ここに入れたメタデータは /profile 側で初回プロフィール作成時に読み取って保存する
+          full_name: registerName,
+          furigana: registerFurigana,
+        },
       },
     })
 
@@ -87,21 +89,17 @@ export default function LoginPage() {
       setMessage(`エラー: ${error.message}`)
     } else {
       setOtpEmail(registerEmail)
-      setOtpType('signup') // ★ここを追加
+      setOtpType('signup')
       setMessage('')
       setStep('otp')
     }
     setLoading(false)
   }
 
-  // OTPコード確認
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
-
-    // ログインか新規登録かで type を切り替える
-    //const otpType = step === 'register' ? 'signup' : 'email' // ★ここを変更
 
     const { error } = await supabase.auth.verifyOtp({
       email: otpEmail,
@@ -124,9 +122,6 @@ export default function LoginPage() {
     <div className="outer-wrap">
       <div className="app-container">
 
-        {/* ========================================== */}
-        {/* 1. LOGIN SCREEN                             */}
-        {/* ========================================== */}
         {step === 'login' && (
           <section id="screen-login" className="screen active">
             <div className="auth-card">
@@ -182,9 +177,6 @@ export default function LoginPage() {
           </section>
         )}
 
-        {/* ========================================== */}
-        {/* 2. REGISTER SCREEN                          */}
-        {/* ========================================== */}
         {step === 'register' && (
           <section id="screen-register" className="screen active">
             <div className="auth-card">
@@ -292,9 +284,6 @@ export default function LoginPage() {
           </section>
         )}
 
-        {/* ========================================== */}
-        {/* 3. OTP VERIFY SCREEN                        */}
-        {/* ========================================== */}
         {step === 'otp' && (
           <section id="screen-verify" className="screen active">
             <div className="auth-card">

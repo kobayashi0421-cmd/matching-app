@@ -10,6 +10,12 @@ type Profile = {
   avatar_url: string | null
   bio: string | null
   hobby_tags: string[] | null
+  full_name: string | null
+  furigana: string | null
+  faculty: string | null
+  department: string | null
+  year: string | null
+  gender: string | null
 }
 
 type MatchWithProfile = {
@@ -17,12 +23,29 @@ type MatchWithProfile = {
   partner: Profile
 }
 
+const HOBBY_OPTIONS = ['旅行', 'ゲーム', '映画', '読書', 'ドライブ', 'スポーツ', 'キャンプ', 'コンピュータ']
+
+const FACULTY_DEPARTMENTS: Record<string, string[]> = {
+  '情報メディア学部': ['情報メディア学科'],
+  'システム情報学部': ['システム情報学科'],
+  '医療情報学部': ['医療情報学科'],
+  '経営情報学部': ['経営情報学科', '先端経営学科', 'スポーツマネジメント学科'],
+}
+
+const YEAR_OPTIONS = ['1年', '2年', '3年', '4年']
+const GENDER_OPTIONS = ['男性', '女性', 'その他']
+
 export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
-  const [hobbyTagsInput, setHobbyTagsInput] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [tagMenuOpen, setTagMenuOpen] = useState(false)
+  const [faculty, setFaculty] = useState('')
+  const [department, setDepartment] = useState('')
+  const [year, setYear] = useState('')
+  const [gender, setGender] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [matches, setMatches] = useState<MatchWithProfile[]>([])
@@ -48,29 +71,25 @@ export default function ProfilePage() {
         .single()
 
       if (profileError && profileError.code === 'PGRST116') {
+        // 初回プロフィール作成: 登録画面で入力した氏名・フリガナ(user_metadata)を引き継ぐ
+        const metaFullName = (user.user_metadata?.full_name as string) ?? ''
+        const metaFurigana = (user.user_metadata?.furigana as string) ?? ''
+
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
-          .insert({ id: user.id })
+          .insert({ id: user.id, full_name: metaFullName, furigana: metaFurigana })
           .select()
           .single()
 
         if (insertError) {
           console.error('プロフィール作成エラー:', insertError)
         } else if (newProfile) {
-          setProfile(newProfile)
-          setDisplayName(newProfile.display_name ?? '')
-          setBio(newProfile.bio ?? '')
-          setHobbyTagsInput((newProfile.hobby_tags ?? []).join(', '))
-          setAvatarPreview(newProfile.avatar_url)
+          applyProfileToState(newProfile)
         }
       } else if (profileError) {
         console.error('プロフィール取得エラー:', profileError)
       } else if (profileData) {
-        setProfile(profileData)
-        setDisplayName(profileData.display_name ?? '')
-        setBio(profileData.bio ?? '')
-        setHobbyTagsInput((profileData.hobby_tags ?? []).join(', '))
-        setAvatarPreview(profileData.avatar_url)
+        applyProfileToState(profileData)
       }
 
       const { data: matchesData, error: matchesError } = await supabase
@@ -87,7 +106,7 @@ export default function ProfilePage() {
 
         const { data: partnerProfiles, error: partnerError } = await supabase
           .from('profiles')
-          .select('id, display_name, avatar_url, bio, hobby_tags')
+          .select('id, display_name, avatar_url, bio, hobby_tags, full_name, furigana, faculty, department, year, gender')
           .in('id', partnerIds)
 
         if (partnerError) {
@@ -109,8 +128,35 @@ export default function ProfilePage() {
       setLoading(false)
     }
 
+    const applyProfileToState = (p: Profile) => {
+      setProfile(p)
+      setDisplayName(p.display_name ?? '')
+      setBio(p.bio ?? '')
+      setSelectedTags(p.hobby_tags ?? [])
+      setFaculty(p.faculty ?? '')
+      setDepartment(p.department ?? '')
+      setYear(p.year ?? '')
+      setGender(p.gender ?? '')
+      setAvatarPreview(p.avatar_url)
+    }
+
     init()
   }, [router, supabase])
+
+  // 学部を変えたら学科の選択肢を作り直し、今の学科がその学部に無ければリセット
+  const handleFacultyChange = (value: string) => {
+    setFaculty(value)
+    const depts = FACULTY_DEPARTMENTS[value] ?? []
+    if (!depts.includes(department)) {
+      setDepartment('')
+    }
+  }
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    )
+  }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -148,18 +194,17 @@ export default function ProfilePage() {
       avatarUrl = publicUrlData.publicUrl
     }
 
-    const hobbyTags = hobbyTagsInput
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0)
-
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
         display_name: displayName,
         bio: bio,
-        hobby_tags: hobbyTags,
+        hobby_tags: selectedTags,
         avatar_url: avatarUrl,
+        faculty: faculty || null,
+        department: department || null,
+        year: year || null,
+        gender: gender || null,
       })
       .eq('id', userId)
 
@@ -178,6 +223,8 @@ export default function ProfilePage() {
     await supabase.auth.signOut()
     router.push('/login')
   }
+
+  const availableDepartments = faculty ? (FACULTY_DEPARTMENTS[faculty] ?? []) : []
 
   if (loading) {
     return (
@@ -233,8 +280,29 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* プロフィール編集フォーム */}
               <form className="profile-form" onSubmit={handleSave}>
+                {/* 氏名・フリガナ(登録画面から引き継いだ実名。基本的にここでは表示のみの想定だが編集も可) */}
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-fullname">氏名</label>
+                    <input
+                      type="text"
+                      id="settings-profile-fullname"
+                      value={profile?.full_name ?? ''}
+                      disabled
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-furigana">氏名（フリガナ）</label>
+                    <input
+                      type="text"
+                      id="settings-profile-furigana"
+                      value={profile?.furigana ?? ''}
+                      disabled
+                    />
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label htmlFor="settings-profile-nickname">表示名</label>
                   <input
@@ -245,6 +313,73 @@ export default function ProfilePage() {
                     onChange={(e) => setDisplayName(e.target.value)}
                     required
                   />
+                </div>
+
+                {/* 学部・学科 */}
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-faculty">学部</label>
+                    <select
+                      id="settings-profile-faculty"
+                      value={faculty}
+                      onChange={(e) => handleFacultyChange(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>学部を選択してください</option>
+                      {Object.keys(FACULTY_DEPARTMENTS).map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-department">学科</label>
+                    <select
+                      id="settings-profile-department"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      disabled={!faculty}
+                      required
+                    >
+                      <option value="" disabled>
+                        {faculty ? '学科を選択してください' : '学部を先に選択してください'}
+                      </option>
+                      {availableDepartments.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 学年・性別 */}
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-year">学年</label>
+                    <select
+                      id="settings-profile-year"
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>学年を選択してください</option>
+                      {YEAR_OPTIONS.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="settings-profile-gender">性別</label>
+                    <select
+                      id="settings-profile-gender"
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>性別を選択してください</option>
+                      {GENDER_OPTIONS.map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="form-group">
@@ -258,15 +393,44 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="settings-profile-hobby">趣味タグ(カンマ区切り)</label>
-                  <input
-                    type="text"
-                    id="settings-profile-hobby"
-                    placeholder="例: 読書, 映画鑑賞, カフェ巡り"
-                    value={hobbyTagsInput}
-                    onChange={(e) => setHobbyTagsInput(e.target.value)}
-                  />
+                {/* 趣味タグ: チェックボックス選択式ドロップダウン */}
+                <div className="hobby-tags-wrapper" style={{ position: 'relative' }}>
+                  <label>趣味タグ</label>
+                  <div className="custom-dropdown">
+                    <div
+                      className="dropdown-trigger"
+                      onClick={() => setTagMenuOpen((open) => !open)}
+                    >
+                      {selectedTags.length > 0 ? (
+                        <span>{selectedTags.join(' / ')}</span>
+                      ) : (
+                        <span className="trigger-placeholder">趣味タグを選択してください</span>
+                      )}
+                      <i className={`fa-solid fa-chevron-${tagMenuOpen ? 'up' : 'down'}`}></i>
+                    </div>
+                    <div className={`dropdown-menu ${tagMenuOpen ? 'active' : ''}`}>
+                      {HOBBY_OPTIONS.map((tag) => (
+                        <label key={tag} className="checkbox-option">
+                          <input
+                            type="checkbox"
+                            checked={selectedTags.includes(tag)}
+                            onChange={() => toggleTag(tag)}
+                          />
+                          {tag}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedTags.length > 0 && (
+                    <div className="selected-tags-container">
+                      {selectedTags.map((tag) => (
+                        <span key={tag} className="tag-badge">
+                          {tag}
+                          <i className="fa-solid fa-xmark" onClick={() => toggleTag(tag)}></i>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <button type="submit" className="btn-primary submit-btn-full" disabled={saving}>
