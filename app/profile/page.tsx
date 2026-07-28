@@ -648,7 +648,7 @@ export default function ProfilePage() {
 
         {/* 下部ナビゲーションバー追加 */}
         <nav className="app-nav-bar" id="app-bottom-nav">
-          <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/')}>
+          <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/home')}>
             <div className="nav-tab-icon icon-home"></div>
           </button>
           <button
