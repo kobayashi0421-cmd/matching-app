@@ -32,10 +32,18 @@ const QUESTIONS = [
   },
 ]
 
+// タイプごとの簡単な説明文(結果画面用)
+const TYPE_DESCRIPTIONS: Record<string, string> = {
+  'ムードメーカー型リーダー': 'みんなの輪の中心に立ち、場を盛り上げながら引っ張っていくタイプです。フットワークが軽く、新しい出会いや企画を楽しめる相手と相性が良さそうです。',
+  'フレンドリーサポーター': '人当たりが良く、周りをそっと支えるのが得意なタイプです。じっくり話を聞いてくれる関係を築きたい人に向いています。',
+  'じっくり思考派リーダー': '一人の時間を大切にしながらも、いざという時は筋道立てて周りを引っ張るタイプです。落ち着いたコミュニケーションを好みます。',
+  'マイペースクリエイター': '自分のペースを大切にしながら、自分なりのやり方で物事を進めるタイプです。マイペースさを理解してくれる相手と良い関係を築けそうです。',
+}
+
 export default function PersonalityTestPage() {
   const [answers, setAnswers] = useState<Record<string, number>>({})
-  const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [resultType, setResultType] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -46,7 +54,6 @@ export default function PersonalityTestPage() {
 
   // 診断結果の計算処理
   const calculateResult = () => {
-    // 簡易的な判定ロジック（タイプを特定）
     const q1Ans = answers['q1']
     const q2Ans = answers['q2']
 
@@ -57,11 +64,9 @@ export default function PersonalityTestPage() {
   }
 
   // 結果の送信・Supabase保存処理
-  // 結果の送信・Supabase保存処理
   const handleSubmit = async () => {
     setLoading(true)
 
-    // 現在ログイン中のユーザー情報を取得
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -70,24 +75,20 @@ export default function PersonalityTestPage() {
       return
     }
 
-    const resultType = calculateResult()
+    const type = calculateResult()
 
-    // 1. undefined 対策として fallback (?? null) を設定
     const updates = {
       id: user.id,
       full_name: user.user_metadata?.full_name ?? null,
       furigana: user.user_metadata?.furigana ?? null,
-      personality_type: resultType,
-
+      personality_type: type,
     }
 
-    // Supabaseの profiles テーブルに診断結果を書き込む (upsert)
     const { error } = await supabase
       .from('profiles')
       .upsert(updates)
 
     if (error) {
-      // 2. エラーの原因を一発で確認できるようログを詳細化
       console.error('診断結果の保存エラー詳細:', {
         message: error.message,
         details: error.details,
@@ -95,16 +96,48 @@ export default function PersonalityTestPage() {
         code: error.code,
       })
       alert(`診断結果の保存に失敗しました: ${error.message}`)
-    } else {
-      // 保存完了後にホームへ遷移
-      router.push('/home')
-      router.refresh()
+      setLoading(false)
+      return
     }
+
+    // ★ 修正点: 保存が終わったら即座に/homeへ飛ばすのではなく、結果画面を表示する
+    setResultType(type)
     setLoading(false)
   }
 
   const isAllAnswered = QUESTIONS.every((q) => answers[q.id] !== undefined)
 
+  // 結果画面
+  if (resultType) {
+    return (
+      <div className="outer-wrap">
+        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="result-card">
+            <div className="result-header">
+              <h2>あなたの診断結果</h2>
+            </div>
+            <div style={{ textAlign: 'center', margin: '20px 0 30px 0' }}>
+              <h3 style={{ color: 'var(--primary-color)', fontSize: '22px', fontWeight: 'bold' }}>
+                【{resultType}】
+              </h3>
+            </div>
+            <div className="result-explanation">
+              {TYPE_DESCRIPTIONS[resultType] ?? ''}
+            </div>
+            <button
+              className="btn-primary submit-btn-full"
+              onClick={() => router.push('/home')}
+              style={{ marginTop: '20px' }}
+            >
+              ホームへ移動
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 質問回答画面
   return (
     <div className="outer-wrap">
       <div className="app-container" style={{ padding: '20px' }}>

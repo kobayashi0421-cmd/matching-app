@@ -16,6 +16,7 @@ type Profile = {
   department: string | null
   year: string | null
   gender: string | null
+  personality_type: string | null
 }
 
 type MatchWithProfile = {
@@ -55,6 +56,7 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<MatchWithProfile[]>([])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [withdrawing, setWithdrawing] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -72,7 +74,7 @@ export default function ProfilePage() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .maybeSingle();
+        .single()
 
       if (profileError && profileError.code === 'PGRST116') {
         // 初回プロフィール作成: 登録画面で入力した氏名・フリガナ(user_metadata)を引き継ぐ
@@ -83,7 +85,7 @@ export default function ProfilePage() {
           .from('profiles')
           .insert({ id: user.id, full_name: metaFullName, furigana: metaFurigana })
           .select()
-          .maybeSingle()
+          .single()
 
         if (insertError) {
           console.error('プロフィール作成エラー:', insertError)
@@ -196,7 +198,6 @@ export default function ProfilePage() {
     setAvatarPreview(URL.createObjectURL(file))
   }
 
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userId) return
@@ -258,8 +259,45 @@ export default function ProfilePage() {
     router.push('/login')
   }
 
-  const availableDepartments = faculty ? (FACULTY_DEPARTMENTS[faculty] ?? []) : []
+  const handleWithdraw = async () => {
+    if (!confirm('本当に退会しますか？この操作は取り消せません。プロフィール・マッチ・メッセージなど、すべてのデータが削除されます。')) {
+      return
+    }
 
+    setWithdrawing(true)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setWithdrawing(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(`退会処理に失敗しました: ${data.error ?? '不明なエラー'}`)
+        setWithdrawing(false)
+        return
+      }
+
+      await supabase.auth.signOut()
+      router.push('/login')
+    } catch (err) {
+      console.error('退会エラー:', err)
+      alert('退会処理中に通信エラーが発生しました。')
+      setWithdrawing(false)
+    }
+  }
+
+  const availableDepartments = faculty ? (FACULTY_DEPARTMENTS[faculty] ?? []) : []
 
   if (loading) {
     return (
@@ -395,6 +433,38 @@ export default function ProfilePage() {
                     )
                   })}
                 </div>
+              </div>
+
+              {/* 性格診断の結果表示 */}
+              <div
+                style={{
+                  maxWidth: '320px',
+                  margin: '16px auto 0 auto',
+                  textAlign: 'center',
+                  fontSize: '13px',
+                  color: 'var(--dark-light)',
+                }}
+              >
+                {profile?.personality_type ? (
+                  <p>
+                    性格診断: <strong style={{ color: 'var(--primary-color)' }}>{profile.personality_type}</strong>{' '}
+                    <button
+                      type="button"
+                      className="btn-secondary-link"
+                      onClick={() => router.push('/personality-test')}
+                    >
+                      もう一度診断する
+                    </button>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-secondary-link"
+                    onClick={() => router.push('/personality-test')}
+                  >
+                    性格診断がまだです。診断してみる
+                  </button>
+                )}
               </div>
 
               <form className="profile-form" onSubmit={handleSave}>
@@ -550,9 +620,44 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* 退会 */}
+              <div style={{ marginTop: '35px', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={handleWithdraw}
+                  disabled={withdrawing}
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--error-color, #e74c3c)',
+                    color: 'var(--error-color, #e74c3c)',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: withdrawing ? 'not-allowed' : 'pointer',
+                    opacity: withdrawing ? 0.6 : 1,
+                  }}
+                >
+                  {withdrawing ? '退会処理中...' : '退会する'}
+                </button>
+              </div>
             </div>
           </div>
         </section>
+
+        {/* 下部ナビゲーション */}
+        <nav className="app-nav-bar">
+          <button className="nav-tab" onClick={() => router.push('/home')}>
+            <div className="nav-tab-icon icon-home"></div>
+          </button>
+          <button className="nav-tab" onClick={() => router.push('/profile')}>
+            <div className="nav-tab-icon icon-chat"></div>
+          </button>
+          <button className="nav-tab active" onClick={() => router.push('/profile')}>
+            <div className="nav-tab-icon icon-person"></div>
+          </button>
+        </nav>
       </div>
     </div>
   )
