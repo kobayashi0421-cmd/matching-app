@@ -72,7 +72,7 @@ export default function ProfilePage() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle();
 
       if (profileError && profileError.code === 'PGRST116') {
         // 初回プロフィール作成: 登録画面で入力した氏名・フリガナ(user_metadata)を引き継ぐ
