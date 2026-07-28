@@ -324,6 +324,7 @@ export default function LoginPage() {
 
                 <button type="submit" className="btn-primary auth-submit-btn" disabled={loading}>
                   認証する
+
                 </button>
               </form>
               <div className="auth-footer">
