@@ -131,7 +131,7 @@ export default function NotificationsPage() {
           <button className="nav-tab" onClick={() => router.push('/talk')} aria-label="トーク">
             <div className="nav-tab-icon icon-chat"></div>
           </button>
-          <button className="nav-tab" onClick={() => router.push('/settings')} aria-label="設定">
+          <button className="nav-tab" onClick={() => router.push('/profile')} aria-label="設定">
             <div className="nav-tab-icon icon-person"></div>
           </button>
         </nav>
