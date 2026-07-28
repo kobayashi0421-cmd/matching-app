@@ -314,7 +314,7 @@ export default function ProfilePage() {
                   </label>
                 </div>
               </div>
-              <label>趣味タグ(最大6個)</label>
+
               <div
                 id="hobby-grid-edit"
                 onClick={() => setTagMenuOpen((open) => !open)}
