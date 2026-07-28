@@ -265,12 +265,12 @@ export default function LoginPage() {
                     onChange={(e) => setPrivacyAgree(e.target.checked)}
                     required
                   />
-                  <label htmlFor="register-privacy-agree">
-                    <Link href="/privacy" className="btn-secondary-link" target="_blank">
-                      プライバシーポリシー
-                    </Link>
-                    に同意します。
-                  </label>
+
+                  <Link href="/privacy" className="btn-secondary-link" target="_blank">
+                    プライバシーポリシー
+                  </Link>
+                  に同意します。
+
                 </div>
 
                 {message && (
