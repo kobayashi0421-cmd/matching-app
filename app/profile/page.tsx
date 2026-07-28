@@ -524,7 +524,7 @@ export default function ProfilePage() {
                       <div
                         key={m.match_id}
                         className="chat-item"
-                        onClick={() => router.push(`/${m.partner.id}`)}
+                        onClick={() => router.push(`/chat?match_id=${m.match_id}`)}
                       >
                         <div className="chat-item-avatar">
                           <img src={m.partner.avatar_url || '/default-avatar.png'} alt={m.partner.display_name || ''} />
