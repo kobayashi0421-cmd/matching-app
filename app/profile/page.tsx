@@ -16,6 +16,7 @@ type Profile = {
   department: string | null
   year: string | null
   gender: string | null
+  personality_type: string | null
 }
 
 type MatchWithProfile = {
@@ -55,6 +56,7 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<MatchWithProfile[]>([])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [withdrawing, setWithdrawing] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -68,15 +70,14 @@ export default function ProfilePage() {
       }
       setUserId(user.id)
 
-      // 1. プロフィール取得（修正箇所）
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .maybeSingle()
+        .single()
 
-      if (!profileData) {
-        // プロフィールが存在しない場合は新規作成
+      if (profileError && profileError.code === 'PGRST116') {
+        // 初回プロフィール作成: 登録画面で入力した氏名・フリガナ(user_metadata)を引き継ぐ
         const metaFullName = (user.user_metadata?.full_name as string) ?? ''
         const metaFurigana = (user.user_metadata?.furigana as string) ?? ''
 
@@ -84,18 +85,19 @@ export default function ProfilePage() {
           .from('profiles')
           .insert({ id: user.id, full_name: metaFullName, furigana: metaFurigana })
           .select()
-          .maybeSingle()
+          .single()
 
         if (insertError) {
           console.error('プロフィール作成エラー:', insertError)
         } else if (newProfile) {
           applyProfileToState(newProfile)
         }
-      } else {
+      } else if (profileError) {
+        console.error('プロフィール取得エラー:', profileError)
+      } else if (profileData) {
         applyProfileToState(profileData)
       }
 
-      // 2. マッチ相手一覧の取得
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select('*')
@@ -149,7 +151,7 @@ export default function ProfilePage() {
     init()
   }, [router, supabase])
 
-  // メニュー枠外クリックで閉じる
+  // 趣味タグのグリッド/メニュー枠の外側をクリックしたらメニューを閉じる(ユニフレの元の挙動と同じ)
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (hobbyWrapperRef.current && !hobbyWrapperRef.current.contains(e.target as Node)) {
@@ -160,13 +162,14 @@ export default function ProfilePage() {
     return () => document.removeEventListener('click', handleOutsideClick)
   }, [])
 
-  // トースト自動削除
+  // トーストを数秒後に自動で消す
   useEffect(() => {
     if (!toastMessage) return
     const timer = setTimeout(() => setToastMessage(null), 3000)
     return () => clearTimeout(timer)
   }, [toastMessage])
 
+  // 学部を変えたら学科の選択肢を作り直し、今の学科がその学部に無ければリセット
   const handleFacultyChange = (value: string) => {
     setFaculty(value)
     const depts = FACULTY_DEPARTMENTS[value] ?? []
@@ -256,6 +259,44 @@ export default function ProfilePage() {
     router.push('/login')
   }
 
+  const handleWithdraw = async () => {
+    if (!confirm('本当に退会しますか？この操作は取り消せません。プロフィール・マッチ・メッセージなど、すべてのデータが削除されます。')) {
+      return
+    }
+
+    setWithdrawing(true)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setWithdrawing(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(`退会処理に失敗しました: ${data.error ?? '不明なエラー'}`)
+        setWithdrawing(false)
+        return
+      }
+
+      await supabase.auth.signOut()
+      router.push('/login')
+    } catch (err) {
+      console.error('退会エラー:', err)
+      alert('退会処理中に通信エラーが発生しました。')
+      setWithdrawing(false)
+    }
+  }
+
   const availableDepartments = faculty ? (FACULTY_DEPARTMENTS[faculty] ?? []) : []
 
   if (loading) {
@@ -320,7 +361,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* 趣味タグ */}
+              {/* 趣味タグ: 6マスグリッド + チェックボックスドロップダウン */}
               <div
                 className="hobby-tags-wrapper"
                 ref={hobbyWrapperRef}
@@ -394,7 +435,40 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {/* 性格診断の結果表示 */}
+              <div
+                style={{
+                  maxWidth: '320px',
+                  margin: '16px auto 0 auto',
+                  textAlign: 'center',
+                  fontSize: '13px',
+                  color: 'var(--dark-light)',
+                }}
+              >
+                {profile?.personality_type ? (
+                  <p>
+                    性格診断: <strong style={{ color: 'var(--primary-color)' }}>{profile.personality_type}</strong>{' '}
+                    <button
+                      type="button"
+                      className="btn-secondary-link"
+                      onClick={() => router.push('/personality-test')}
+                    >
+                      もう一度診断する
+                    </button>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-secondary-link"
+                    onClick={() => router.push('/personality-test')}
+                  >
+                    性格診断がまだです。診断してみる
+                  </button>
+                )}
+              </div>
+
               <form className="profile-form" onSubmit={handleSave}>
+                {/* 氏名・フリガナ: 編集可能にした */}
                 <div className="form-grid">
                   <div className="form-group">
                     <label htmlFor="settings-profile-fullname">氏名</label>
@@ -430,6 +504,7 @@ export default function ProfilePage() {
                   />
                 </div>
 
+                {/* 学部・学科 */}
                 <div className="form-grid">
                   <div className="form-group">
                     <label htmlFor="settings-profile-faculty">学部</label>
@@ -464,6 +539,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                {/* 学年・性別 */}
                 <div className="form-grid">
                   <div className="form-group">
                     <label htmlFor="settings-profile-year">学年</label>
@@ -512,7 +588,7 @@ export default function ProfilePage() {
               </form>
 
               {/* マッチした相手一覧 */}
-              <div style={{ marginTop: '35px', marginBottom: '80px' }}>
+              <div style={{ marginTop: '35px' }}>
                 <h3 className="section-title">マッチした相手</h3>
                 {matches.length === 0 ? (
                   <p style={{ fontSize: '13px', color: 'var(--dark-light)', padding: '10px 0' }}>
@@ -524,7 +600,7 @@ export default function ProfilePage() {
                       <div
                         key={m.match_id}
                         className="chat-item"
-                        onClick={() => router.push(`/talk`)}
+                        onClick={() => router.push(`/chat/${m.match_id}`)}
                       >
                         <div className="chat-item-avatar">
                           <img src={m.partner.avatar_url || '/default-avatar.png'} alt={m.partner.display_name || ''} />
@@ -544,29 +620,44 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* 退会 */}
+              <div style={{ marginTop: '35px', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={handleWithdraw}
+                  disabled={withdrawing}
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--error-color, #e74c3c)',
+                    color: 'var(--error-color, #e74c3c)',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: withdrawing ? 'not-allowed' : 'pointer',
+                    opacity: withdrawing ? 0.6 : 1,
+                  }}
+                >
+                  {withdrawing ? '退会処理中...' : '退会する'}
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* 下部ナビゲーションバー追加 */}
-          <nav className="app-nav-bar" id="app-bottom-nav">
-            <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/')}>
-              <div className="nav-tab-icon icon-home"></div>
-            </button>
-            <button
-              className="nav-tab relative"
-              aria-label="通知"
-              onClick={() => router.push('/notifications')}
-            >
-              <div className="nav-tab-icon icon-bell"></div>
-            </button>
-            <button className="nav-tab" aria-label="トーク" onClick={() => router.push('/talk')}>
-              <div className="nav-tab-icon icon-chat"></div>
-            </button>
-            <button className="nav-tab active" aria-label="設定" onClick={() => router.push('/profile')}>
-              <div className="nav-tab-icon icon-person"></div>
-            </button>
-          </nav>
         </section>
+
+        {/* 下部ナビゲーション */}
+        <nav className="app-nav-bar">
+          <button className="nav-tab" onClick={() => router.push('/home')}>
+            <div className="nav-tab-icon icon-home"></div>
+          </button>
+          <button className="nav-tab" onClick={() => router.push('/profile')}>
+            <div className="nav-tab-icon icon-chat"></div>
+          </button>
+          <button className="nav-tab active" onClick={() => router.push('/profile')}>
+            <div className="nav-tab-icon icon-person"></div>
+          </button>
+        </nav>
       </div>
     </div>
   )
