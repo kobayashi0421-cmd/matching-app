@@ -646,17 +646,25 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* 下部ナビゲーション */}
-        <nav className="app-nav-bar">
-          <button className="nav-tab" onClick={() => router.push('/home')}>
+        {/* 下部ナビゲーションバー追加 */}
+        <nav className="app-nav-bar" id="app-bottom-nav">
+          <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/')}>
             <div className="nav-tab-icon icon-home"></div>
           </button>
-          <button className="nav-tab" onClick={() => router.push('/profile')}>
+          <button
+            className="nav-tab relative"
+            aria-label="通知"
+            onClick={() => router.push('/notifications')}
+          >
+            <div className="nav-tab-icon icon-bell"></div>
+          </button>
+          <button className="nav-tab" aria-label="トーク" onClick={() => router.push('/talk')}>
             <div className="nav-tab-icon icon-chat"></div>
           </button>
-          <button className="nav-tab active" onClick={() => router.push('/profile')}>
+          <button className="nav-tab active" aria-label="設定" onClick={() => router.push('/profile')}>
             <div className="nav-tab-icon icon-person"></div>
           </button>
+
         </nav>
       </div>
     </div>
