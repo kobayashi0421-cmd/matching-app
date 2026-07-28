@@ -39,6 +39,8 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [displayName, setDisplayName] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [furigana, setFurigana] = useState('')
   const [bio, setBio] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
@@ -133,6 +135,8 @@ export default function ProfilePage() {
     const applyProfileToState = (p: Profile) => {
       setProfile(p)
       setDisplayName(p.display_name ?? '')
+      setFullName(p.full_name ?? '')
+      setFurigana(p.furigana ?? '')
       setBio(p.bio ?? '')
       setSelectedTags(p.hobby_tags ?? [])
       setFaculty(p.faculty ?? '')
@@ -225,6 +229,8 @@ export default function ProfilePage() {
       .from('profiles')
       .update({
         display_name: displayName,
+        full_name: fullName,
+        furigana: furigana,
         bio: bio,
         hobby_tags: selectedTags,
         avatar_url: avatarUrl,
@@ -314,6 +320,7 @@ export default function ProfilePage() {
                   </label>
                 </div>
               </div>
+
               {/* 趣味タグ: 6マスグリッド + チェックボックスドロップダウン */}
               <div
                 className="hobby-tags-wrapper"
@@ -326,7 +333,6 @@ export default function ProfilePage() {
                   position: 'relative',
                 }}
               >
-                {/* チェックボックスドロップダウン */}
                 <div className="custom-dropdown" style={{ position: 'relative', marginTop: '8px' }}>
                   <div
                     className={`dropdown-menu ${tagMenuOpen ? 'active' : ''}`}
@@ -351,7 +357,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* 6マスグリッド */}
                 <div
                   id="hobby-grid-edit"
                   onClick={() => setTagMenuOpen((open) => !open)}
@@ -391,15 +396,16 @@ export default function ProfilePage() {
               </div>
 
               <form className="profile-form" onSubmit={handleSave}>
-                {/* 氏名・フリガナ(登録画面から引き継いだ実名。基本的にここでは表示のみの想定だが編集も可) */}
+                {/* 氏名・フリガナ: 編集可能にした */}
                 <div className="form-grid">
                   <div className="form-group">
                     <label htmlFor="settings-profile-fullname">氏名</label>
                     <input
                       type="text"
                       id="settings-profile-fullname"
-                      value={profile?.full_name ?? ''}
-                      disabled
+                      placeholder="氏名を入力してください"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                     />
                   </div>
                   <div className="form-group">
@@ -407,8 +413,9 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       id="settings-profile-furigana"
-                      value={profile?.furigana ?? ''}
-                      disabled
+                      placeholder="氏名（フリガナ）を入力してください"
+                      value={furigana}
+                      onChange={(e) => setFurigana(e.target.value)}
                     />
                   </div>
                 </div>
@@ -502,7 +509,6 @@ export default function ProfilePage() {
                     onChange={(e) => setBio(e.target.value)}
                   />
                 </div>
-
 
                 <button type="submit" className="btn-primary submit-btn-full" disabled={saving}>
                   {saving ? '保存中...' : '保存する'}
