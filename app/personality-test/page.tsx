@@ -111,7 +111,7 @@ export default function PersonalityTestPage() {
   if (resultType) {
     return (
       <div className="outer-wrap">
-        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
           <div className="result-card">
             <div className="result-header">
               <h2>あなたの診断結果</h2>
@@ -140,7 +140,7 @@ export default function PersonalityTestPage() {
   // 質問回答画面
   return (
     <div className="outer-wrap">
-      <div className="app-container" style={{ padding: '20px' }}>
+      <div className="app-container" style={{ padding: '20px', overflowY: 'auto' }}>
         <div className="auth-card" style={{ maxWidth: '500px', margin: '0 auto', width: '100%' }}>
           <div className="auth-header">
             <span className="vertical-bar"></span>
