@@ -78,7 +78,7 @@ export default function PersonalityTestPage() {
       full_name: user.user_metadata?.full_name ?? null,
       furigana: user.user_metadata?.furigana ?? null,
       personality_type: resultType,
-      updated_at: new Date().toISOString(),
+
     }
 
     // Supabaseの profiles テーブルに診断結果を書き込む (upsert)
