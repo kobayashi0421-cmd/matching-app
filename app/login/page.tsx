@@ -27,7 +27,7 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('')
   const [otpEmail, setOtpEmail] = useState('')
   const [otpType, setOtpType] = useState<'email' | 'signup'>('email')
-
+  console.log('現在のotpType:', otpType)
   const router = useRouter()
   const supabase = createClient()
 
