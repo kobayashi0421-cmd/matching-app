@@ -239,7 +239,8 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="terms-checkbox-group">
+                {/* 利用規約 */}
+                <div className="form-group terms-checkbox-group">
                   <input
                     type="checkbox"
                     id="register-terms-agree"
@@ -247,42 +248,29 @@ export default function LoginPage() {
                     onChange={(e) => setTermsAgree(e.target.checked)}
                     required
                   />
+                  <label htmlFor="register-terms-agree">
+                    <Link href="/terms" className="btn-secondary-link" target="_blank">
+                      利用規約
+                    </Link>
+                    に同意します。
+                  </label>
+                </div>
 
-
-
-                  {/* 利用規約 */}
-                  <div className="form-group terms-checkbox-group">
-                    <input
-                      type="checkbox"
-                      id="register-terms-agree"
-                      checked={termsAgree}
-                      onChange={(e) => setTermsAgree(e.target.checked)}
-                      required
-                    />
-                    <label htmlFor="register-terms-agree">
-                      <Link href="/terms" className="btn-secondary-link" target="_blank">
-                        利用規約
-                      </Link>
-                      に同意します。
-                    </label>
-                  </div>
-
-                  {/* プライバシーポリシー */}
-                  <div className="form-group terms-checkbox-group">
-                    <input
-                      type="checkbox"
-                      id="register-privacy-agree"
-                      checked={privacyAgree}
-                      onChange={(e) => setPrivacyAgree(e.target.checked)}
-                      required
-                    />
-                    <label htmlFor="register-privacy-agree">
-                      <Link href="/privacy" className="btn-secondary-link" target="_blank">
-                        プライバシーポリシー
-                      </Link>
-                      に同意します。
-                    </label>
-                  </div>
+                {/* プライバシーポリシー */}
+                <div className="form-group terms-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="register-privacy-agree"
+                    checked={privacyAgree}
+                    onChange={(e) => setPrivacyAgree(e.target.checked)}
+                    required
+                  />
+                  <label htmlFor="register-privacy-agree">
+                    <Link href="/privacy" className="btn-secondary-link" target="_blank">
+                      プライバシーポリシー
+                    </Link>
+                    に同意します。
+                  </label>
                 </div>
 
                 {message && (
