@@ -110,7 +110,7 @@ export default function LoginPage() {
     if (error) {
       setMessage(`エラー: コードが正しくないか、期限切れです。(${error.message})`)
     } else {
-      router.push('/profile')
+      router.push('/home')
       router.refresh()
     }
     setLoading(false)
