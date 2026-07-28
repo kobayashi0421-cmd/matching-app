@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from "next/link"
 
 type Step = 'login' | 'register' | 'otp'
 
@@ -238,7 +239,7 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="form-group terms-checkbox-group">
+                <div className="terms-checkbox-group">
                   <input
                     type="checkbox"
                     id="register-terms-agree"
@@ -246,10 +247,17 @@ export default function LoginPage() {
                     onChange={(e) => setTermsAgree(e.target.checked)}
                     required
                   />
+
                   <label htmlFor="register-terms-agree">
-                    <button type="button" className="btn-secondary-link">利用規約</button>に同意します。
+                    <span>に同意します。</span>
                   </label>
+
+                  <Link href="/terms" className="btn-secondary-link">
+                    利用規約
+                  </Link>
                 </div>
+
+
                 <div className="form-group terms-checkbox-group">
                   <input
                     type="checkbox"
@@ -338,6 +346,7 @@ export default function LoginPage() {
             </div>
           </section>
         )}
+
 
       </div>
     </div>
