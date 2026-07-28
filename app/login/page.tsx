@@ -248,13 +248,14 @@ export default function LoginPage() {
                     required
                   />
 
-                  <label htmlFor="register-terms-agree">
-                    <span>に同意します。</span>
-                  </label>
+
 
                   <Link href="/terms" className="btn-secondary-link">
                     利用規約
                   </Link>
+                  <label htmlFor="register-privacy-agree">
+                    <span>に同意します。</span>
+                  </label>
                 </div>
 
 
