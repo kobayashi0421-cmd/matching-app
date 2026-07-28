@@ -141,7 +141,18 @@ export default function HomePage() {
               ) : (
                 <div className="user-grid-row">
                   {users.map((u) => (
-                    <div key={u.id} className="user-card">
+                    <div
+                      key={u.id}
+                      className="user-card"
+                      style={{ cursor: 'pointer' }}
+                      onClick={(e) => {
+                        // ボタンを押した時はカード全体のクリック処理（画面遷移）を発生させない
+                        if ((e.target as HTMLElement).closest('button')) return;
+
+                        // 相手の詳細画面（またはチャット等）に移動する
+                        router.push(`/user/${u.id}`); // ※移動したいパスに合わせて調整してください
+                      }}
+                    >
                       <div className="card-image-box">
                         <img src={u.avatar_url || '/default-avatar.png'} alt={u.display_name || ''} />
                       </div>
