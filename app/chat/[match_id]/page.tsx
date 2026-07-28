@@ -10,6 +10,7 @@ type Message = {
   sender_id: string
   content: string
   created_at: string
+  read_at: string | null
 }
 
 type PartnerProfile = {
@@ -30,7 +31,19 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
   const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // 相手から届いた未読メッセージをまとめて既読にする
+  const markAsRead = async (partnerId: string) => {
+    await supabase
+      .from('messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('match_id', match_id)
+      .eq('sender_id', partnerId)
+      .is('read_at', null)
+  }
+
   useEffect(() => {
+    let partnerId: string | null = null
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -39,7 +52,6 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
       }
       setUserId(user.id)
 
-      // マッチ相手のプロフィールを取得(ヘッダー・アバター表示用)
       const { data: matchData, error: matchError } = await supabase
         .from('matches')
         .select('*')
@@ -51,7 +63,7 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
         return
       }
 
-      const partnerId = matchData.user1_id === user.id ? matchData.user2_id : matchData.user1_id
+      partnerId = matchData.user1_id === user.id ? matchData.user2_id : matchData.user1_id
 
       const { data: partnerData, error: partnerError } = await supabase
         .from('profiles')
@@ -64,8 +76,12 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
       } else if (partnerData) {
         setPartner(partnerData)
       }
+
+      // 画面を開いた時点で、相手からの未読メッセージを既読にする
+      if (partnerId) {
+        await markAsRead(partnerId)
+      }
     }
-    getUser()
 
     const fetchMessages = async () => {
       const { data, error } = await supabase
@@ -80,7 +96,12 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
         setMessages(data)
       }
     }
-    fetchMessages()
+
+    const run = async () => {
+      await getUser()
+      await fetchMessages()
+    }
+    run()
 
     const channel = supabase
       .channel(`chat_${match_id}`)
@@ -95,6 +116,27 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
         (payload) => {
           const newMsg = payload.new as Message
           setMessages((prev) => [...prev, newMsg])
+
+          // チャットを開いている間に相手からメッセージが届いたら、即座に既読にする
+          if (partnerId && newMsg.sender_id === partnerId) {
+            markAsRead(partnerId)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `match_id=eq.${match_id}`
+        },
+        (payload) => {
+          // 相手が自分のメッセージを既読にした時など、read_at の変化を反映する
+          const updatedMsg = payload.new as Message
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m))
+          )
         }
       )
       .subscribe()
@@ -129,6 +171,11 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
       setNewMessage('')
     }
   }
+
+  // 自分が送ったメッセージのうち、相手が読んだ一番新しいものだけに「既読」を出す(LINEと同じ見せ方)
+  const lastReadMineId = [...messages]
+    .reverse()
+    .find((m) => m.sender_id === userId && m.read_at)?.id
 
   return (
     <div className="outer-wrap">
@@ -175,6 +222,9 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
                             {msg.content}
                           </div>
                           <div className="msg-meta">
+                            {isMyMessage && msg.id === lastReadMineId && (
+                              <span style={{ marginRight: '4px', opacity: 0.85 }}>既読</span>
+                            )}
                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
