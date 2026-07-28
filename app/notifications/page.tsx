@@ -102,7 +102,8 @@ export default function NotificationsPage() {
                     gap: '12px',
                     padding: '12px',
                     borderRadius: '12px',
-                    backgroundColor: n.is_read ? 'transparent' : 'rgba(255, 99, 132, 0.08)',
+                    /* 背景色をより自然で薄いトーンに変更 */
+                    backgroundColor: n.is_read ? 'transparent' : 'rgba(255, 99, 132, 0.04)',
                     borderBottom: '1px solid #eee'
                   }}
                 >
@@ -111,8 +112,9 @@ export default function NotificationsPage() {
                     alt=""
                     style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
                   />
-                  <div style={{ flex: 1, fontSize: '14px' }}>
-                    <strong>{n.actor?.display_name || '誰か'}</strong> さんがあなたに「いいね！」しました。
+                  {/* 文字色を黒 (color: '#333') に指定 */}
+                  <div style={{ flex: 1, fontSize: '14px', color: '#333' }}>
+                    <strong style={{ color: '#000' }}>{n.actor?.display_name || '誰か'}</strong> さんがあなたに「いいね！」しました。
                   </div>
                 </div>
               ))}
@@ -128,7 +130,7 @@ export default function NotificationsPage() {
           <button className="nav-tab active relative" onClick={() => router.push('/notifications')} aria-label="通知">
             <div className="nav-tab-icon icon-bell"></div>
           </button>
-          <button className="nav-tab" onClick={() => router.push('/talk')} aria-label="トーク">
+          <button className="nav-tab" onClick={() => router.push('/chat')} aria-label="トーク">
             <div className="nav-tab-icon icon-chat"></div>
           </button>
           <button className="nav-tab" onClick={() => router.push('/profile')} aria-label="設定">

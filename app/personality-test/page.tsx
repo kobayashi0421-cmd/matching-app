@@ -77,57 +77,49 @@ export default function PersonalityTestPage() {
 
     const type = calculateResult()
 
-    const updates = {
-      id: user.id,
-      full_name: user.user_metadata?.full_name ?? null,
-      furigana: user.user_metadata?.furigana ?? null,
-      personality_type: type,
-    }
-
+    // 既存プロフィールの更新 (updateを使用し、他データの消失を防ぎます)
     const { error } = await supabase
       .from('profiles')
-      .upsert(updates)
+      .update({
+        personality_type: type,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
 
     if (error) {
-      console.error('診断結果の保存エラー詳細:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-      })
+      console.error('診断結果の保存エラー詳細:', error)
       alert(`診断結果の保存に失敗しました: ${error.message}`)
       setLoading(false)
       return
     }
 
-    // ★ 修正点: 保存が終わったら即座に/homeへ飛ばすのではなく、結果画面を表示する
     setResultType(type)
     setLoading(false)
   }
 
   const isAllAnswered = QUESTIONS.every((q) => answers[q.id] !== undefined)
 
-  // 結果画面
+  // 診断結果画面
   if (resultType) {
     return (
       <div className="outer-wrap">
         <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
-          <div className="result-card">
-            <div className="result-header">
-              <h2>あなたの診断結果</h2>
+          <div className="result-card" style={{ width: '100%', maxWidth: '480px', backgroundColor: '#fff', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div className="result-header" style={{ textAlign: 'center' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111' }}>あなたの診断結果</h2>
             </div>
-            <div style={{ textAlign: 'center', margin: '20px 0 30px 0' }}>
-              <h3 style={{ color: 'var(--primary-color)', fontSize: '22px', fontWeight: 'bold' }}>
+            <div style={{ textAlign: 'center', margin: '20px 0 24px 0' }}>
+              <h3 style={{ color: 'var(--primary-color, #ff6b81)', fontSize: '22px', fontWeight: 'bold' }}>
                 【{resultType}】
               </h3>
             </div>
-            <div className="result-explanation">
+            <div className="result-explanation" style={{ fontSize: '15px', color: '#333', lineHeight: '1.6', background: '#f9f9f9', padding: '16px', borderRadius: '12px' }}>
               {TYPE_DESCRIPTIONS[resultType] ?? ''}
             </div>
             <button
               className="btn-primary submit-btn-full"
               onClick={() => router.push('/home')}
-              style={{ marginTop: '20px' }}
+              style={{ marginTop: '24px', width: '100%' }}
             >
               ホームへ移動
             </button>
@@ -142,21 +134,21 @@ export default function PersonalityTestPage() {
     <div className="outer-wrap">
       <div className="app-container" style={{ padding: '20px', overflowY: 'auto' }}>
         <div className="auth-card" style={{ maxWidth: '500px', margin: '0 auto', width: '100%' }}>
-          <div className="auth-header">
+          <div className="auth-header" style={{ marginBottom: '16px' }}>
             <span className="vertical-bar"></span>
-            <h2>性格診断</h2>
+            <h2 style={{ fontSize: '20px', color: '#111', fontWeight: 'bold' }}>性格診断</h2>
           </div>
 
-          <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
+          <p style={{ fontSize: '14px', color: '#555', marginBottom: '24px', lineHeight: '1.5' }}>
             あなたにピッタリのマッチングを提供するため、簡単な質問にお答えください。
           </p>
 
           {QUESTIONS.map((q, idx) => (
             <div key={q.id} style={{ marginBottom: '24px' }}>
-              <p style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '10px' }}>
+              <p style={{ fontWeight: 'bold', fontSize: '15px', color: '#222', marginBottom: '12px' }}>
                 Q{idx + 1}. {q.text}
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {q.options.map((opt, optionIdx) => {
                   const isSelected = answers[q.id] === optionIdx
                   return (
@@ -165,14 +157,16 @@ export default function PersonalityTestPage() {
                       type="button"
                       onClick={() => handleSelectOption(q.id, optionIdx)}
                       style={{
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        border: isSelected ? '2px solid var(--primary-color, #ff6b81)' : '1px solid #ccc',
-                        backgroundColor: isSelected ? 'rgba(255, 107, 129, 0.1)' : '#fff',
+                        padding: '14px 16px',
+                        borderRadius: '10px',
+                        border: isSelected ? '2px solid var(--primary-color, #ff6b81)' : '1px solid #ddd',
+                        backgroundColor: isSelected ? 'rgba(255, 107, 129, 0.08)' : '#fff',
+                        /* 未選択時の文字色もはっきりとした黒（#333）に変更 */
                         color: isSelected ? 'var(--primary-color, #ff6b81)' : '#333',
                         fontWeight: isSelected ? 'bold' : 'normal',
                         textAlign: 'left',
                         cursor: 'pointer',
+                        fontSize: '14px',
                         transition: 'all 0.2s ease',
                       }}
                     >
@@ -189,7 +183,7 @@ export default function PersonalityTestPage() {
             className="btn-primary auth-submit-btn"
             disabled={!isAllAnswered || loading}
             onClick={handleSubmit}
-            style={{ marginTop: '20px' }}
+            style={{ marginTop: '16px', width: '100%' }}
           >
             {loading ? '診断結果を保存中...' : '診断を完了して次へ'}
           </button>
