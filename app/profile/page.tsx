@@ -19,11 +19,6 @@ type Profile = {
   personality_type: string | null
 }
 
-type MatchWithProfile = {
-  match_id: string
-  partner: Profile
-}
-
 const HOBBY_OPTIONS = ['旅行', 'ゲーム', '映画', '読書', 'ドライブ', 'スポーツ', 'キャンプ', 'コンピュータ']
 
 const FACULTY_DEPARTMENTS: Record<string, string[]> = {
@@ -53,7 +48,6 @@ export default function ProfilePage() {
   const [gender, setGender] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const [matches, setMatches] = useState<MatchWithProfile[]>([])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [withdrawing, setWithdrawing] = useState(false)
@@ -77,7 +71,6 @@ export default function ProfilePage() {
         .single()
 
       if (profileError && profileError.code === 'PGRST116') {
-        // 初回プロフィール作成: 登録画面で入力した氏名・フリガナ(user_metadata)を引き継ぐ
         const metaFullName = (user.user_metadata?.full_name as string) ?? ''
         const metaFurigana = (user.user_metadata?.furigana as string) ?? ''
 
@@ -96,39 +89,6 @@ export default function ProfilePage() {
         console.error('プロフィール取得エラー:', profileError)
       } else if (profileData) {
         applyProfileToState(profileData)
-      }
-
-      const { data: matchesData, error: matchesError } = await supabase
-        .from('matches')
-        .select('*')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-
-      if (matchesError) {
-        console.error('マッチ一覧取得エラー:', matchesError)
-      } else if (matchesData && matchesData.length > 0) {
-        const partnerIds = matchesData.map((m) =>
-          m.user1_id === user.id ? m.user2_id : m.user1_id
-        )
-
-        const { data: partnerProfiles, error: partnerError } = await supabase
-          .from('profiles')
-          .select('id, display_name, avatar_url, bio, hobby_tags, full_name, furigana, faculty, department, year, gender')
-          .in('id', partnerIds)
-
-        if (partnerError) {
-          console.error('マッチ相手プロフィール取得エラー:', partnerError)
-        } else {
-          const combined: MatchWithProfile[] = matchesData
-            .map((m) => {
-              const partnerId = m.user1_id === user.id ? m.user2_id : m.user1_id
-              const partner = partnerProfiles?.find((p) => p.id === partnerId)
-              if (!partner) return null
-              return { match_id: m.id, partner }
-            })
-            .filter((x): x is MatchWithProfile => x !== null)
-
-          setMatches(combined)
-        }
       }
 
       setLoading(false)
@@ -151,7 +111,6 @@ export default function ProfilePage() {
     init()
   }, [router, supabase])
 
-  // 趣味タグのグリッド/メニュー枠の外側をクリックしたらメニューを閉じる(ユニフレの元の挙動と同じ)
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (hobbyWrapperRef.current && !hobbyWrapperRef.current.contains(e.target as Node)) {
@@ -162,14 +121,12 @@ export default function ProfilePage() {
     return () => document.removeEventListener('click', handleOutsideClick)
   }, [])
 
-  // トーストを数秒後に自動で消す
   useEffect(() => {
     if (!toastMessage) return
     const timer = setTimeout(() => setToastMessage(null), 3000)
     return () => clearTimeout(timer)
   }, [toastMessage])
 
-  // 学部を変えたら学科の選択肢を作り直し、今の学科がその学部に無ければリセット
   const handleFacultyChange = (value: string) => {
     setFaculty(value)
     const depts = FACULTY_DEPARTMENTS[value] ?? []
@@ -320,7 +277,7 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
-        <section id="screen-profile-edit" className="screen active">
+        <section id="screen-profile-edit" className="screen active" style={{ height: '100%' }}>
           <header className="main-header border-bottom">
             <div className="header-left"></div>
             <div className="header-center">
@@ -337,8 +294,8 @@ export default function ProfilePage() {
             </div>
           </header>
 
-          <div className="profile-card settings-card">
-            <div className="profile-content-scroll">
+          <div className="profile-card settings-card" style={{ height: 'calc(100% - 120px)', overflowY: 'auto' }}>
+            <div className="profile-content-scroll" style={{ padding: '0 15px 30px 15px' }}>
               {/* アバター編集 */}
               <div className="profile-banner">
                 <div className="avatar-edit-container">
@@ -361,7 +318,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* 趣味タグ: 6マスグリッド + チェックボックスドロップダウン */}
+              {/* 趣味タグ */}
               <div
                 className="hobby-tags-wrapper"
                 ref={hobbyWrapperRef}
@@ -468,7 +425,6 @@ export default function ProfilePage() {
               </div>
 
               <form className="profile-form" onSubmit={handleSave}>
-                {/* 氏名・フリガナ: 編集可能にした */}
                 <div className="form-grid">
                   <div className="form-group">
                     <label htmlFor="settings-profile-fullname">氏名</label>
@@ -587,40 +543,6 @@ export default function ProfilePage() {
                 </button>
               </form>
 
-              {/* マッチした相手一覧 */}
-              <div style={{ marginTop: '35px' }}>
-                <h3 className="section-title">マッチした相手</h3>
-                {matches.length === 0 ? (
-                  <p style={{ fontSize: '13px', color: 'var(--dark-light)', padding: '10px 0' }}>
-                    まだマッチした相手がいません
-                  </p>
-                ) : (
-                  <div className="chat-list" style={{ border: '1px solid var(--secondary-border)', borderRadius: '8px', overflow: 'hidden' }}>
-                    {matches.map((m) => (
-                      <div
-                        key={m.match_id}
-                        className="chat-item"
-                        onClick={() => router.push(`/chat/${m.match_id}`)}
-                      >
-                        <div className="chat-item-avatar">
-                          <img src={m.partner.avatar_url || '/default-avatar.png'} alt={m.partner.display_name || ''} />
-                        </div>
-                        <div className="chat-item-info">
-                          <div className="chat-item-header">
-                            <span className="chat-item-name">{m.partner.display_name || '名前未設定'}</span>
-                          </div>
-                          <div className="chat-item-preview-row">
-                            <span className="chat-item-preview">
-                              {(m.partner.hobby_tags ?? []).slice(0, 3).join(' / ')}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {/* 退会 */}
               <div style={{ marginTop: '35px', textAlign: 'center' }}>
                 <button
@@ -637,6 +559,10 @@ export default function ProfilePage() {
                     fontWeight: 500,
                     cursor: withdrawing ? 'not-allowed' : 'pointer',
                     opacity: withdrawing ? 0.6 : 1,
+                    width: '100%',
+                    maxWidth: '320px',
+                    marginInline: 'auto',
+                    display: 'block'
                   }}
                 >
                   {withdrawing ? '退会処理中...' : '退会する'}
@@ -644,28 +570,44 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* 下部ナビゲーション (4つのタブに更新) */}
+          <nav className="app-nav-bar" id="app-bottom-nav">
+            <button
+              className="nav-tab"
+              id="nav-tab-home"
+              onClick={() => router.push('/home')}
+              aria-label="ホーム"
+            >
+              <div className="nav-tab-icon icon-home"></div>
+            </button>
+            <button
+              className="nav-tab relative"
+              id="nav-tab-bell"
+              onClick={() => router.push('/notifications')}
+              aria-label="通知"
+            >
+              <div className="nav-tab-icon icon-bell"></div>
+              <span className="bell-badge" id="bell-badge-nav"></span>
+            </button>
+            <button
+              className="nav-tab"
+              id="nav-tab-talk"
+              onClick={() => router.push('/talk')}
+              aria-label="トーク"
+            >
+              <div className="nav-tab-icon icon-chat"></div>
+            </button>
+            <button
+              className="nav-tab active"
+              id="nav-tab-profile"
+              onClick={() => router.push('/profile')}
+              aria-label="設定"
+            >
+              <div className="nav-tab-icon icon-person"></div>
+            </button>
+          </nav>
         </section>
-
-        {/* 下部ナビゲーションバー追加 */}
-        <nav className="app-nav-bar" id="app-bottom-nav">
-          <button className="nav-tab" aria-label="ホーム" onClick={() => router.push('/home')}>
-            <div className="nav-tab-icon icon-home"></div>
-          </button>
-          <button
-            className="nav-tab relative"
-            aria-label="通知"
-            onClick={() => router.push('/notifications')}
-          >
-            <div className="nav-tab-icon icon-bell"></div>
-          </button>
-          <button className="nav-tab" aria-label="トーク" onClick={() => router.push('/talk')}>
-            <div className="nav-tab-icon icon-chat"></div>
-          </button>
-          <button className="nav-tab active" aria-label="設定" onClick={() => router.push('/profile')}>
-            <div className="nav-tab-icon icon-person"></div>
-          </button>
-
-        </nav>
       </div>
     </div>
   )
