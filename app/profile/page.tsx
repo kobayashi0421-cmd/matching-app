@@ -542,6 +542,47 @@ export default function ProfilePage() {
                   {saving ? '保存中...' : '保存する'}
                 </button>
               </form>
+              {/* マイページメニュー */}
+              <div className="mypage-menu-list" style={{ maxWidth: '320px', margin: '20px auto 0 auto' }}>
+                <div
+                  className="mypage-menu-item"
+                  id="menu-item-likes-history"
+                  onClick={() => router.push('/likes-history')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px 12px',
+                    borderBottom: '1px solid #eee',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div className="mypage-menu-item-left" style={{ display: 'flex', alignItems: 'center' }}>
+                    <i className="fa-solid fa-heart" style={{ color: '#3498db', width: 18, marginRight: 8 }}></i>
+                    <span>いいね履歴</span>
+                  </div>
+                  <i className="fa-solid fa-chevron-right" style={{ color: '#ccc' }}></i>
+                </div>
+
+                <div
+                  className="mypage-menu-item2"
+                  id="menu-item-collection"
+                  onClick={() => router.push('/collection')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px 12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div className="mypage-menu-item-left" style={{ display: 'flex', alignItems: 'center' }}>
+                    <i className="fa-solid fa-bookmark" style={{ color: '#3498db', marginRight: 8 }}></i>
+                    <span>保存</span>
+                  </div>
+                  <i className="fa-solid fa-chevron-right" style={{ color: '#ccc' }}></i>
+                </div>
+              </div>
 
               {/* 退会 */}
               <div style={{ marginTop: '35px', textAlign: 'center' }}>
