@@ -447,7 +447,7 @@ export default function TalkPage() {
                 className="nav-tab active"
                 id="nav-tab-talk"
                 onClick={() => router.push('/talk')}
-                aria-label="トーク" style={{ color: '#000' }}
+                aria-label="トーク"
               >
                 <div className="nav-tab-icon icon-chat"></div>
               </button>
