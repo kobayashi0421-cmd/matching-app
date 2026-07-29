@@ -56,6 +56,8 @@ export default function CombinedAppPage() {
   // --- チャット画面用ステート ---
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
   const [partner, setPartner] = useState<PartnerProfile | null>(null)
+  const [savedIds, setSavedIds] = useState<string[]>([])   // 保存済みの相手のID一覧
+  const [savingId, setSavingId] = useState<string | null>(null)  // 今まさに保存処理中のID
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
 
@@ -94,6 +96,12 @@ export default function CombinedAppPage() {
         .select('to_user_id')
         .eq('from_user_id', user.id)
       const likedIds = (myLikes ?? []).map((l) => l.to_user_id)
+
+      const { data: mySaves } = await supabase
+        .from('saves')
+        .select('saved_user_id')
+        .eq('user_id', user.id)
+      setSavedIds((mySaves ?? []).map((s) => s.saved_user_id))
 
       let query = supabase
         .from('profiles')
@@ -260,6 +268,7 @@ export default function CombinedAppPage() {
       return
     }
 
+
     const u1 = userId < target.id ? userId : target.id
     const u2 = userId < target.id ? target.id : userId
 
@@ -277,6 +286,27 @@ export default function CombinedAppPage() {
     }
 
     setLikingId(null)
+  }
+  // 「保存」処理
+  const handleToggleSave = async (target: OtherProfile) => {
+    if (!userId || savingId) return
+    setSavingId(target.id)
+
+    const isSaved = savedIds.includes(target.id)
+
+    if (isSaved) {
+      // すでに保存済み → 削除する
+      await supabase.from('saves').delete()
+        .eq('user_id', userId)
+        .eq('saved_user_id', target.id)
+      setSavedIds((prev) => prev.filter((id) => id !== target.id))
+    } else {
+      // まだ保存してない → 追加する
+      await supabase.from('saves').insert({ user_id: userId, saved_user_id: target.id })
+      setSavedIds((prev) => [...prev, target.id])
+    }
+
+    setSavingId(null)
   }
 
   // メッセージ送信
@@ -380,6 +410,15 @@ export default function CombinedAppPage() {
                               disabled={likingId === u.id}
                             >
                               <i className="fa-solid fa-heart"></i> いいね！
+                            </button>
+                            {/* ↓ ここが新しく追加する保存ボタン */}
+                            <button
+                              className="btn-card-action"
+                              onClick={() => handleToggleSave(u)}
+                              disabled={savingId === u.id}
+                            >
+                              <i className="fa-solid fa-bookmark"></i>
+                              {savedIds.includes(u.id) ? ' 保存済み' : ' 保存'}
                             </button>
                           </div>
                         </div>
