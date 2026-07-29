@@ -130,7 +130,7 @@ export default function NotificationsPage() {
           <button className="nav-tab active relative" onClick={() => router.push('/notifications')} aria-label="通知">
             <div className="nav-tab-icon icon-bell"></div>
           </button>
-          <button className="nav-tab" onClick={() => router.push('/chat')} aria-label="トーク">
+          <button className="nav-tab" onClick={() => router.push('/talk')} aria-label="トーク">
             <div className="nav-tab-icon icon-chat"></div>
           </button>
           <button className="nav-tab" onClick={() => router.push('/profile')} aria-label="設定">
