@@ -376,14 +376,13 @@ export default function ProfilePage() {
                         key={i}
                         className={`hobby-tag-pill ${tag ? 'active' : 'add-btn'}`}
                         style={{
-                          backgroundColor: tag ? '#e8f4fc' : '#f2f4f7',
-                          color: '#000000',
-                          border: tag ? '1.5px solid #3498db' : '1px dashed #b0bec5',
+                          backgroundColor: tag ? '#3498db' : '#38A1DB',
+                          color: 'white',
                           borderRadius: '20px',
                           padding: tag ? '6px 8px' : '4px 8px',
                           textAlign: 'center',
                           fontSize: tag ? '13px' : '16px',
-                          fontWeight: tag ? 'bold' : '500',
+                          fontWeight: tag ? 'normal' : 'bold',
                         }}
                       >
                         {label}
