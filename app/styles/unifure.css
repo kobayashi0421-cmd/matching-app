@@ -3355,7 +3355,7 @@ body[data-current-screen="collection"] .hamburger-btn {
   justify-content: center;
   z-index: 9999;
   opacity: 1;
-  transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
+  transition: opacity 1.5s ease-out, visibility 1.5s ease-out;
   pointer-events: auto;
 }
 

@@ -19,12 +19,12 @@ export default function LoginPage() {
     // 1.5秒後にフェードアウトを開始
     const fadeTimer = setTimeout(() => {
       setSplashState('fading')
-    }, 1500)
+    }, 3000)
 
     // 2.3秒後に完全に非表示（DOM削除）
     const hideTimer = setTimeout(() => {
       setSplashState('hidden')
-    }, 2300)
+    }, 4600)
 
     return () => {
       clearTimeout(fadeTimer)
