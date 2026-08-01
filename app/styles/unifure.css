@@ -3356,7 +3356,7 @@ body[data-current-screen="collection"] .hamburger-btn {
   justify-content: center;
   z-index: 9999;
   opacity: 1;
-  transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
+  transition: opacity 1.5s ease-out, visibility 1.5s ease-out;
   pointer-events: auto;
 }
 
@@ -3377,8 +3377,8 @@ body[data-current-screen="collection"] .hamburger-btn {
 .splash-logo-img {
   width: 220px;
   height: auto;
-  margin-bottom: 20px;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+  margin-bottom: 16px;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25));
   animation: splashPulse 2s ease-in-out infinite alternate;
 }
 
@@ -3386,16 +3386,16 @@ body[data-current-screen="collection"] .hamburger-btn {
   font-size: 52px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: 3px;
-  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  letter-spacing: 2px;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   font-family: 'Outfit', 'Noto Sans JP', sans-serif;
 }
 
 .splash-subtitle {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.9);
-  margin-top: 10px;
-  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 6px;
+  letter-spacing: 1px;
 }
 
 @keyframes splashFadeIn {
@@ -3418,4 +3418,26 @@ body[data-current-screen="collection"] .hamburger-btn {
   100% {
     transform: scale(1.05);
   }
+}
+
+/* ==========================================================================
+   HOBBY TAG PILL STYLES
+   ========================================================================== */
+.hobby-tag-pill {
+  border-radius: 20px !important;
+  text-align: center !important;
+}
+
+.hobby-tag-pill.add-btn {
+  background-color: #38A1DB !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+  border: none !important;
+}
+
+.hobby-tag-pill.active {
+  background-color: #3498db !important;
+  color: #ffffff !important;
+  font-weight: normal !important;
+  border: none !important;
 }
