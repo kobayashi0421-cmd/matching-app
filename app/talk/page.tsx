@@ -338,7 +338,7 @@ export default function TalkPage() {
 
             {/* Right Panel: Active Chat Room */}
             {showChatPane && (
-              <div className="talk-main" id="talk-main" style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0 }}>
+              <div className="talk-main" id="talk-main" style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, color: '#000' }}>
                 <div className="talk-main-header">
                   <button
                     className="btn-chat-back-mobile"
@@ -351,7 +351,7 @@ export default function TalkPage() {
                   >
                     <i className="fa-solid fa-chevron-left"></i>
                   </button>
-                  <h3 id="active-chat-partner-name">{partner?.display_name || 'トーク相手'}</h3>
+                  <h3 id="active-chat-partner-name" style={{ color: '#000' }}>{partner?.display_name || 'トーク相手'}</h3>
                   <div className="header-right-actions">
                     {activeMatchId && partner && (
                       <button
