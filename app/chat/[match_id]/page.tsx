@@ -3,6 +3,7 @@
 import { useEffect, useState, use, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
+import ReportModal from '@/app/components/ReportModal'
 
 type Message = {
   id: string
@@ -26,6 +27,7 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
   const [newMessage, setNewMessage] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [partner, setPartner] = useState<PartnerProfile | null>(null)
+  const [showReport, setShowReport] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -194,7 +196,17 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
                 <h3 id="active-chat-partner-name" style={{ color: '#000' }}>
                   {partner?.display_name || 'トーク相手'}
                 </h3>
-                <div className="header-right-actions"></div>
+                <div className="header-right-actions">
+                  {userId && partner && (
+                    <button
+                      type="button"
+                      className="btn-report"
+                      onClick={() => setShowReport(true)}
+                    >
+                      通報
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* メッセージ一覧エリア */}
@@ -253,6 +265,14 @@ export default function ChatPage({ params }: { params: Promise<{ match_id: strin
                   </button>
                 </form>
               </div>
+              {showReport && userId && partner && (
+                <ReportModal
+                  reporterId={userId}
+                  targetUserId={partner.id}
+                  targetDefaultName={partner.display_name || ''}
+                  onClose={() => setShowReport(false)}
+                />
+              )}
             </div>
           </div>
         </section>
