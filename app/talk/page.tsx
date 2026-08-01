@@ -280,7 +280,7 @@ export default function TalkPage() {
 
             {/* Left Panel: Chat List */}
             {showSidebar && (
-              <div className="talk-sidebar" id="talk-sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div className="talk-sidebar" id="talk-sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', color: '#000' }}>
                 <div className="sidebar-header">
                   <button className="btn-sidebar-back" id="btn-talk-sidebar-back" onClick={() => router.push('/home')}>
                     <i className="fa-solid fa-chevron-left"></i>
