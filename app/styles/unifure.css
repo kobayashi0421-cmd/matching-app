@@ -3419,3 +3419,25 @@ body[data-current-screen="collection"] .hamburger-btn {
     transform: scale(1.05);
   }
 }
+
+/* ==========================================================================
+   HOBBY TAG PILL STYLES
+   ========================================================================== */
+.hobby-tag-pill {
+  border-radius: 20px !important;
+  text-align: center !important;
+}
+
+.hobby-tag-pill.add-btn {
+  background-color: #38A1DB !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+  border: none !important;
+}
+
+.hobby-tag-pill.active {
+  background-color: #3498db !important;
+  color: #ffffff !important;
+  font-weight: normal !important;
+  border: none !important;
+}
