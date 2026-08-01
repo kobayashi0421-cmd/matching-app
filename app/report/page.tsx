@@ -77,7 +77,7 @@ export default function ReportAdminPage() {
             <button onClick={() => callAction('unsuspend', r.target_user_id)}>停止解除</button>
           </div>
         </div>
-      ))}
+      ))}/* */
     </div>
   )
 }
