@@ -131,6 +131,27 @@ export default function LoginPage() {
     if (error) {
       setMessage(`エラー: コードが正しくないか、期限切れです。(${error.message})`)
     } else {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_suspended, suspended_until')
+          .eq('id', user.id)
+          .single()
+
+        const stillSuspended =
+          profile?.is_suspended &&
+          (!profile.suspended_until || new Date(profile.suspended_until) > new Date())
+
+        if (stillSuspended) {
+          await supabase.auth.signOut()
+          setMessage('エラー: このアカウントは利用停止中です。')
+          setLoading(false)
+          return
+        }
+      }
+
       // ★ ここを修正！
       // 新規登録の時だけ「/personality-test（性格診断）」へ移動させます
       if (otpType === 'signup') {
