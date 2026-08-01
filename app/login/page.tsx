@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from "next/link"
@@ -11,6 +11,26 @@ export default function LoginPage() {
   const [step, setStep] = useState<Step>('login')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+
+  // splash state ('visible' -> 'fading' -> 'hidden')
+  const [splashState, setSplashState] = useState<'visible' | 'fading' | 'hidden'>('visible')
+
+  useEffect(() => {
+    // 1.5秒後にフェードアウトを開始
+    const fadeTimer = setTimeout(() => {
+      setSplashState('fading')
+    }, 1500)
+
+    // 2.3秒後に完全に非表示（DOM削除）
+    const hideTimer = setTimeout(() => {
+      setSplashState('hidden')
+    }, 2300)
+
+    return () => {
+      clearTimeout(fadeTimer)
+      clearTimeout(hideTimer)
+    }
+  }, [])
 
   // login fields
   const [loginEmail, setLoginEmail] = useState('')
@@ -128,6 +148,20 @@ export default function LoginPage() {
 
   return (
     <div className="outer-wrap">
+      {splashState !== 'hidden' && (
+        <div className={`splash-overlay ${splashState === 'fading' ? 'fade-out' : ''}`}>
+          <div className="splash-content">
+            <img
+              src="/images/unifure-logo.png"
+              alt="unifure-logo"
+              className="splash-logo-img"
+            />
+            <h1 className="splash-title">unifure</h1>
+            <p className="splash-subtitle">大学生のためのマッチングアプリ</p>
+          </div>
+        </div>
+      )}
+
       <div className="app-container">
 
         {step === 'login' && (
