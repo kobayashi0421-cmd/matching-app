@@ -342,7 +342,7 @@ export default function ProfilePage() {
                     }}
                   >
                     {HOBBY_OPTIONS.map((tag) => (
-                      <label key={tag} className="checkbox-option">
+                      <label key={tag} className="checkbox-option" style={{ color: '#000000' }}>
                         <input
                           type="checkbox"
                           checked={selectedTags.includes(tag)}
