@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
+import ReportModal from '@/app/components/ReportModal'
 
 type Profile = {
   id: string
@@ -51,6 +52,7 @@ export default function TalkPage() {
 
   // モバイル表示判定
   const [isMobile, setIsMobile] = useState(false)
+  const [showReport, setShowReport] = useState(false)
 
   // 1. レスポンシブ幅の監視
   useEffect(() => {
@@ -351,7 +353,15 @@ export default function TalkPage() {
                   </button>
                   <h3 id="active-chat-partner-name">{partner?.display_name || 'トーク相手'}</h3>
                   <div className="header-right-actions">
-                    {/* Placeholder if needed */}
+                    {activeMatchId && partner && (
+                      <button
+                        type="button"
+                        className="btn-report"
+                        onClick={() => setShowReport(true)}
+                      >
+                        通報
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -460,6 +470,14 @@ export default function TalkPage() {
                 <div className="nav-tab-icon icon-person"></div>
               </button>
             </nav>
+          )}
+          {showReport && userId && partner && activeMatchId && (
+            <ReportModal
+              reporterId={userId}
+              targetUserId={partner.id}
+              targetDefaultName={partner.display_name || ''}
+              onClose={() => setShowReport(false)}
+            />
           )}
         </section>
       </div>
