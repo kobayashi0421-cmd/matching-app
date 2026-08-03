@@ -1,0 +1,239 @@
+/* app/report/report.module.css */
+.lockScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1a;
+}
+
+.lockCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+}
+
+.lockLabel {
+  color: #999;
+  font-size: 14px;
+}
+
+.lockInput {
+  width: 140px;
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #262626;
+  color: #fff;
+}
+
+.lockInputError {
+  border-color: #e24b4a;
+  animation: shake 0.3s;
+}
+
+.lockError {
+  color: #e24b4a;
+  font-size: 13px;
+  margin: 0;
+}
+
+.lockButton {
+  margin-top: 8px;
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: none;
+  background: #fff;
+  color: #1a1a1a;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+@keyframes shake {
+  25% {
+    transform: translateX(-6px);
+  }
+
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.search {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.hint {
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.targetName {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.date {
+  font-size: 12px;
+  color: #999;
+}
+
+.content {
+  font-size: 14px;
+  color: #333;
+  margin: 0 0 12px;
+  white-space: pre-wrap;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.presetButton {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.presetButtonActive {
+  border-color: #333;
+  background: #333;
+  color: #fff;
+}
+
+.minutesInput {
+  width: 64px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.dangerOutline,
+.warnOutline,
+.ghostButton {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.dangerOutline {
+  border: 1px solid #e24b4a;
+  color: #e24b4a;
+}
+
+.warnOutline {
+  border: 1px solid #ba7517;
+  color: #ba7517;
+}
+
+.ghostButton {
+  border: 1px solid #ddd;
+  color: #555;
+}
+
+.dangerButton,
+.warnButton {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dangerButton {
+  background: #e24b4a;
+}
+
+.warnButton {
+  background: #ba7517;
+}
+
+.dangerButton:disabled,
+.warnButton:disabled,
+.ghostButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+}
