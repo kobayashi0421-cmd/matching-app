@@ -69,7 +69,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.1);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const playErrorSound = () => {
@@ -86,7 +86,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.2);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const playSuccessSound = () => {
@@ -104,7 +104,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
         osc.start(ctx.currentTime + i * 0.08);
         osc.stop(ctx.currentTime + i * 0.08 + 0.15);
       });
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Node Selection & Edge Tracing Handler
@@ -335,7 +335,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
                 <g
                   key={node.id}
                   onClick={() => handleNodeClick(node.id)}
-                  className="cursor-pointer group"
+                  className="hf-node"
                 >
                   {/* Pulse ring for active current node */}
                   {isCurrent && (
@@ -346,7 +346,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth="3"
-                      className="animate-ping opacity-75"
+                      className="hf-ring"
                     />
                   )}
 
@@ -358,7 +358,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
                     fill={isCurrent ? '#f59e0b' : isVisited ? '#3b82f6' : '#1e293b'}
                     stroke={isCurrent ? '#fef08a' : isVisited ? '#60a5fa' : '#64748b'}
                     strokeWidth="3"
-                    className="transition-all duration-200 group-hover:scale-125"
+                    className="hf-node-body"
                     filter={isCurrent ? 'url(#glow)' : undefined}
                   />
 
@@ -385,11 +385,10 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
           <button
             onClick={handleUndo}
             disabled={nodeHistory.length === 0}
-            className={`flex-1 py-3 px-4 rounded-2xl font-bold text-sm border transition-all flex items-center justify-center gap-2 ${
-              nodeHistory.length > 0
+            className={`flex-1 py-3 px-4 rounded-2xl font-bold text-sm border transition-all flex items-center justify-center gap-2 ${nodeHistory.length > 0
                 ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 shadow-md active:scale-95'
                 : 'bg-slate-950 text-slate-600 border-slate-900 cursor-not-allowed'
-            }`}
+              }`}
           >
             <span>↩️</span> 1手戻す
           </button>
@@ -397,11 +396,10 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
           <button
             onClick={handleReset}
             disabled={nodeHistory.length === 0}
-            className={`flex-1 py-3 px-4 rounded-2xl font-bold text-sm border transition-all flex items-center justify-center gap-2 ${
-              nodeHistory.length > 0
+            className={`flex-1 py-3 px-4 rounded-2xl font-bold text-sm border transition-all flex items-center justify-center gap-2 ${nodeHistory.length > 0
                 ? 'bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border-rose-800/60 shadow-md active:scale-95'
                 : 'bg-slate-950 text-slate-600 border-slate-900 cursor-not-allowed'
-            }`}
+              }`}
           >
             <span>🔄</span> やり直す
           </button>
