@@ -79,7 +79,7 @@ export default function CalendarCreatePage() {
           <div className="font-bold">{month.getFullYear()}年 {month.getMonth() + 1}月</div>
           <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="px-3 py-1 rounded-lg hover:bg-gray-100">→</button>
         </div>
-        <div className="grid grid-cols-7 text-center text-xs text-gray-400 mb-1">
+        <div className="grid grid-cols-7 text-center text-xs text-gray-900 mb-1">
           {['日', '月', '火', '水', '木', '金', '土'].map((w) => <div key={w}>{w}</div>)}
         </div>
         <div className="grid grid-cols-7 gap-1">
@@ -96,7 +96,7 @@ export default function CalendarCreatePage() {
                     ? 'bg-indigo-600 text-white font-bold'
                     : d < today
                     ? 'text-gray-300'
-                    : 'hover:bg-indigo-50'
+                    : 'text-gray-900 hover:bg-indigo-50'
                 }`}
               >
                 {Number(d.slice(8))}

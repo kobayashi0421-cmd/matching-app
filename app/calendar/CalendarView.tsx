@@ -59,7 +59,7 @@ export function CalendarView({
         <button onClick={() => setOffset(offset + 1)} className="px-3 py-1 rounded-lg hover:bg-gray-100">→</button>
       </div>
 
-      <div className="grid grid-cols-7 text-center text-xs text-gray-400 mb-1">
+      <div className="grid grid-cols-7 text-center text-xs text-gray-900 mb-1">
         {['日', '月', '火', '水', '木', '金', '土'].map((w) => <div key={w}>{w}</div>)}
       </div>
 
@@ -69,7 +69,7 @@ export function CalendarView({
           const cand = candidateByDate.get(d);
           if (!cand) {
             return (
-              <div key={d} className="min-h-[3.5rem] rounded-lg p-1 text-xs text-gray-300">
+              <div key={d} className="min-h-[3.5rem] rounded-lg p-1 text-xs text-gray-900">
                 {Number(d.slice(8))}
               </div>
             );
