@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase, useCalendarUser } from '../useCalendarUser';
 import { NameGate } from '../NameGate';
+import { CalendarView } from '../CalendarView';
 
 type Answer = 'ok' | 'maybe' | 'ng';
 type DateRow = { id: string; date: string };
@@ -100,6 +101,12 @@ export default function EventPage() {
         <h1 className="text-2xl font-bold">{title}</h1>
         <button onClick={copyLink} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 shrink-0">🔗 リンクをコピー</button>
       </div>
+
+      {/* カレンダー(日付の下に回答者の名前) */}
+      <section className="mb-8">
+        <h2 className="font-bold mb-3">カレンダー</h2>
+        <CalendarView dates={dates} responses={responses} userId={userId} />
+      </section>
 
       {/* 自分の回答 */}
       <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm mb-8">
