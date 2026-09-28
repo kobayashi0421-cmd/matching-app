@@ -52,7 +52,7 @@ export function CalendarView({
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm text-gray-900">
       <div className="flex items-center justify-between mb-2">
         <button onClick={() => setOffset(offset - 1)} className="px-3 py-1 rounded-lg hover:bg-gray-100">←</button>
         <div className="font-bold">{month.getFullYear()}年 {month.getMonth() + 1}月</div>
@@ -82,13 +82,12 @@ export function CalendarView({
                 {chips.slice(0, MAX_CHIPS).map((r) => (
                   <div
                     key={r.id}
-                    className={`flex items-center gap-0.5 rounded px-1 text-[10px] leading-4 ${
-                      r.user_id === userId
+                    className={`flex items-center gap-0.5 rounded px-1 text-[10px] leading-4 ${r.user_id === userId
                         ? 'bg-indigo-600 text-white font-bold'
                         : r.answer === 'ok'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
                   >
                     <span className="shrink-0">{SYMBOL[r.answer]}</span>
                     <span className="truncate">{r.name}</span>
