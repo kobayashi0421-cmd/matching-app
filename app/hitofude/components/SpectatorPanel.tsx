@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { RoomState } from '../types';
+import { formatDuration } from '../format';
 
 interface SpectatorPanelProps {
   roomState: RoomState;
@@ -10,15 +11,6 @@ interface SpectatorPanelProps {
 
 export const SpectatorPanel: React.FC<SpectatorPanelProps> = ({ roomState, onExitSpectator }) => {
   const activePlayers = roomState.players.filter((p) => p.status !== 'kicked');
-
-  const formatDuration = (ms?: number) => {
-    if (!ms) return '--:--.--';
-    const totalSec = ms / 1000;
-    const min = Math.floor(totalSec / 60);
-    const sec = Math.floor(totalSec % 60);
-    const hundredths = Math.floor((ms % 1000) / 10);
-    return `${min}:${sec < 10 ? '0' : ''}${sec}.${hundredths < 10 ? '0' : ''}${hundredths}`;
-  };
 
   return (
     <div className="max-w-4xl mx-auto w-full px-4 py-8">
@@ -52,7 +44,7 @@ export const SpectatorPanel: React.FC<SpectatorPanelProps> = ({ roomState, onExi
             </span>
             <span className="text-sm font-bold text-slate-200">
               {roomState.status === 'lobby' && '待機室（管理者のスタート待ち）'}
-              {roomState.status === 'countdown' && '3秒カウントダウン進行中...'}
+              {roomState.status === 'countdown' && 'カウントダウン中...'}
               {roomState.status === 'in_game' && '対戦中（リアルタイム進行中）'}
               {roomState.status === 'finished' && 'レース終了！最終結果発表'}
             </span>

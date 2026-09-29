@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Player, RoomState } from '../types';
+import { RoomState } from '../types';
+import { formatDuration } from '../format';
 
 interface LeaderboardProps {
   roomState: RoomState;
@@ -23,19 +24,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
       if (a.status === 'finished' && b.status !== 'finished') return -1;
       if (a.status !== 'finished' && b.status === 'finished') return 1;
       if (a.status === 'finished' && b.status === 'finished') {
-        return (a.totalTimeMs || Infinity) - (b.totalTimeMs || Infinity);
+        return (a.totalTimeMs ?? Infinity) - (b.totalTimeMs ?? Infinity);
       }
       return b.currentQuestion - a.currentQuestion;
     });
-
-  const formatDuration = (ms?: number) => {
-    if (!ms) return '--:--.--';
-    const totalSec = ms / 1000;
-    const min = Math.floor(totalSec / 60);
-    const sec = Math.floor(totalSec % 60);
-    const hundredths = Math.floor((ms % 1000) / 10);
-    return `${min}:${sec < 10 ? '0' : ''}${sec}.${hundredths < 10 ? '0' : ''}${hundredths}`;
-  };
 
   const getRankBadge = (rank: number) => {
     if (rank === 1) return <span className="text-3xl">🥇</span>;
@@ -55,7 +47,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           一筆書き競争 ランキング
         </h1>
         <p className="mt-2 text-slate-300 text-sm max-w-lg mx-auto">
-          全5問の一筆書きパズルを制制した最速プレイヤーたちが勢揃い！
+          全5問の一筆書きパズルを制した最速プレイヤーたちが勢揃い！
         </p>
 
         {/* 1st Place Highlight */}
@@ -119,13 +111,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                     <h3 className="font-bold text-slate-100 text-base flex items-center gap-2">
                       {p.name}
                       {isFinished && (
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.2 rounded-full font-bold">
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
                           完走
                         </span>
                       )}
                     </h3>
                     <div className="text-xs text-slate-400">
-                      {isFinished ? '全5問クリア' : `問 ${p.currentQuestion} で終了`}
+                      {isFinished ? '全5問クリア' : `問 ${p.currentQuestion} で${p.left ? '退出' : '終了'}`}
                     </div>
                   </div>
                 </div>

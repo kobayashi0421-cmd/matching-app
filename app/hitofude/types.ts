@@ -8,11 +8,12 @@ export interface Player {
   color: string;
   status: PlayerStatus;
   currentQuestion: number; // 1 to 5
-  startTime?: number; // timestamp ms
-  finishTime?: number; // timestamp ms
-  questionTimes: number[]; // Array of duration in ms for each question
+  finishTime?: number; // サーバー時刻(ms)
+  questionTimes: number[]; // 各問の所要時間(ms)
   totalTimeMs?: number;
   joinedAt: number;
+  /** 対戦中に画面を離れた(順位表には残す) */
+  left?: boolean;
 }
 
 export interface Spectator {
@@ -23,8 +24,8 @@ export interface Spectator {
 
 export interface RoomState {
   status: RoomStatus;
-  countdown: number; // 3, 2, 1, 0
-  startTime?: number; // Game start timestamp
+  /** レース開始時刻(サーバー時刻ms)。countdown 中は「この時刻になったら開始」 */
+  startAt?: number;
   players: Player[];
   spectators: Spectator[];
   kickedPlayerIds: string[];
@@ -33,15 +34,15 @@ export interface RoomState {
 
 export interface Node {
   id: string;
-  x: number; // Percentage 0 - 100 or pixels in viewBox
+  x: number;
   y: number;
   label?: string;
 }
 
 export interface Edge {
   id: string;
-  source: string; // Node ID
-  target: string; // Node ID
+  source: string;
+  target: string;
 }
 
 export interface Puzzle {
@@ -56,21 +57,3 @@ export interface Puzzle {
 }
 
 export type UserRole = 'player' | 'spectator' | 'admin' | null;
-
-export type SyncEventType =
-  | 'SYNC_STATE'
-  | 'PLAYER_JOIN'
-  | 'SPECTATOR_JOIN'
-  | 'PLAYER_LEAVE'
-  | 'KICK_PLAYER'
-  | 'START_GAME'
-  | 'UPDATE_PROGRESS'
-  | 'FINISH_PLAYER'
-  | 'RESET_ROOM';
-
-export interface SyncMessage {
-  type: SyncEventType;
-  payload?: any;
-  senderId?: string;
-  timestamp: number;
-}

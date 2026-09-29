@@ -11,6 +11,8 @@ interface LobbyProps {
   currentPlayer: Player | null;
   userRole: UserRole;
   onLeave: () => void;
+  notice?: string | null;
+  canJoin?: boolean;
 }
 
 const AVATARS = ['🔥', '⚡', '🎯', '🚀', '👑', '🐱', '🦊', '🐉', '💎', '🌸'];
@@ -33,6 +35,8 @@ export const Lobby: React.FC<LobbyProps> = ({
   currentPlayer,
   userRole,
   onLeave,
+  notice = null,
+  canJoin = true,
 }) => {
   const [name, setName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('⚡');
@@ -58,7 +62,7 @@ export const Lobby: React.FC<LobbyProps> = ({
       </div>
 
       {/* Main Container */}
-      {!userRole || userRole === 'spectator' && !currentPlayer ? (
+      {!userRole || (userRole === 'spectator' && !currentPlayer) ? (
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl backdrop-blur-xl">
           <h2 className="text-2xl font-bold text-slate-100 text-center mb-6 flex items-center justify-center gap-2">
             <span>🚀</span> エントリー設定
@@ -122,11 +126,18 @@ export const Lobby: React.FC<LobbyProps> = ({
             </div>
           </div>
 
+          {(notice || !canJoin) && (
+            <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs text-center">
+              {notice || '対戦が進行中のため、プレイヤーとしては参加できません。観戦モードでご覧ください。'}
+            </div>
+          )}
+
           {/* Action buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => onJoinAsPlayer(name, selectedAvatar, selectedColor)}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-lg shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3"
+              disabled={!canJoin}
+              className="disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-lg shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3"
             >
               <span>🎮</span> 参加する (対戦プレー)
             </button>
@@ -235,7 +246,7 @@ export const Lobby: React.FC<LobbyProps> = ({
                         <div className="font-bold text-slate-200 text-sm truncate flex items-center gap-1.5">
                           {p.name}
                           {p.id === currentPlayer?.id && (
-                            <span className="text-[10px] bg-indigo-500 text-white font-extrabold px-1.5 py-0.2 rounded">
+                            <span className="text-[10px] bg-indigo-500 text-white font-extrabold px-1.5 py-0.5 rounded">
                               YOU
                             </span>
                           )}

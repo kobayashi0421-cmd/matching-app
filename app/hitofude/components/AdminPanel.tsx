@@ -2,12 +2,15 @@
 
 import React from 'react';
 import { RoomState } from '../types';
+import { formatDuration } from '../format';
+import { Leaderboard } from './Leaderboard';
 
 interface AdminPanelProps {
   roomState: RoomState;
   onKickPlayer: (playerId: string) => void;
   onStartGame: () => void;
   onResetRoom: () => void;
+  onForceEnd: () => void;
   onExitAdmin: () => void;
 }
 
@@ -15,20 +18,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   roomState,
   onKickPlayer,
   onStartGame,
+  onForceEnd,
   onResetRoom,
   onExitAdmin,
 }) => {
   const activePlayers = roomState.players.filter((p) => p.status !== 'kicked');
   const kickedPlayers = roomState.players.filter((p) => p.status === 'kicked');
-
-  const formatDuration = (ms?: number) => {
-    if (!ms) return '--:--.--';
-    const totalSec = ms / 1000;
-    const min = Math.floor(totalSec / 60);
-    const sec = Math.floor(totalSec % 60);
-    const hundredths = Math.floor((ms % 1000) / 10);
-    return `${min}:${sec < 10 ? '0' : ''}${sec}.${hundredths < 10 ? '0' : ''}${hundredths}`;
-  };
 
   return (
     <div className="max-w-5xl mx-auto w-full px-4 py-8">
@@ -98,8 +93,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <span>🚀</span> スタートを押す
               </button>
             ) : (
-              <div className="text-center text-sm font-semibold text-slate-300">
-                {roomState.status === 'in_game' ? '対戦が進行しています' : '対戦が完了しました'}
+              <div className="text-center text-sm font-semibold text-slate-300 w-full">
+                {roomState.status === 'in_game' ? '対戦が進行しています' : roomState.status === 'countdown' ? 'まもなく開始します' : '対戦が完了しました'}
+                {roomState.status === 'in_game' && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('走っている人がいても対戦を終了して順位表を出します。よろしいですか？')) onForceEnd();
+                    }}
+                    className="mt-3 w-full py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-sm font-bold transition-all"
+                  >
+                    🏁 強制終了して結果を出す
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -164,7 +169,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                     <td className="p-4">
                       <span className="font-semibold text-slate-200">
-                        {p.status === 'finished' ? '5 / 5 クリア' : `問 ${p.currentQuestion} / 5`}
+                        {p.status === 'finished' ? '5 / 5 クリア' : `問 ${p.currentQuestion} / 5`}{p.left ? '（退出済み）' : ''}
                       </span>
                     </td>
 
@@ -206,6 +211,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
       </div>
+
+      {roomState.status === 'finished' && (
+        <div className="mt-8">
+          <Leaderboard roomState={roomState} onBackToLobby={onExitAdmin} onResetRoom={onResetRoom} isAdmin />
+        </div>
+      )}
     </div>
   );
 };

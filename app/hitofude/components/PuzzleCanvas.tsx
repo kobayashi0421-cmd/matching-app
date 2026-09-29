@@ -1,22 +1,87 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Puzzle, Player } from '../types';
-import { PUZZLES, getEdgeKey } from '../puzzles';
+import { Puzzle } from '../types';
+import { getEdgeKey } from '../puzzles';
+import { formatTimer } from '../format';
 
 interface PuzzleCanvasProps {
-  player: Player;
   puzzle: Puzzle;
   questionIndex: number; // 1 to 5
-  gameStartTime: number; // timestamp
+  gameStartTime: number; // レース開始時刻(サーバー時刻ms)
+  getNow: () => number; // サーバー時刻を返す関数
   onCompleteQuestion: (questionIndex: number, durationMs: number) => void;
 }
 
+// AudioContext は Chrome で同時数に上限があるので、1つだけ作って使い回す
+let sharedCtx: AudioContext | null = null;
+const getAudioCtx = (): AudioContext | null => {
+  try {
+    if (!sharedCtx) {
+      const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+      sharedCtx = new Ctor();
+    }
+    if (sharedCtx!.state === 'suspended') void sharedCtx!.resume();
+    return sharedCtx;
+  } catch {
+    return null;
+  }
+};
+
+const playPopSound = () => {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(440, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.2, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.1);
+};
+
+const playErrorSound = () => {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(220, ctx.currentTime);
+  osc.frequency.linearRampToValueAtTime(110, ctx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.3, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.2);
+};
+
+const playSuccessSound = () => {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.08);
+    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + i * 0.08 + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime + i * 0.08);
+    osc.stop(ctx.currentTime + i * 0.08 + 0.15);
+  });
+};
+
+/** 親側で key={questionIndex} を付けているので、問題が変わるたびに状態は新品になる */
 export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
-  player,
   puzzle,
   questionIndex,
   gameStartTime,
+  getNow,
   onCompleteQuestion,
 }) => {
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
@@ -24,88 +89,30 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   const [nodeHistory, setNodeHistory] = useState<string[]>([]);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [showHint, setShowHint] = useState<boolean>(false);
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
-  const [elapsedMs, setElapsedMs] = useState<number>(0);
+  // 第1問はレース開始時刻から、以降は表示された時刻から測る
+  const [questionStartTime] = useState<number>(() => (questionIndex === 1 ? gameStartTime : getNow()));
+  const [elapsedMs, setElapsedMs] = useState<number>(() => Math.max(0, getNow() - gameStartTime));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Timer effect for stopwatch
-  useEffect(() => {
-    setQuestionStartTime(Date.now());
-    setCurrentNodeId(null);
-    setTracedEdgeKeys(new Set());
-    setNodeHistory([]);
-    setIsSuccess(false);
-    setShowHint(false);
-    setErrorMessage(null);
-  }, [questionIndex]);
+  const completeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsedMs(Date.now() - gameStartTime);
-    }, 40);
+    const interval = setInterval(() => setElapsedMs(Math.max(0, getNow() - gameStartTime)), 40);
     return () => clearInterval(interval);
-  }, [gameStartTime]);
+  }, [gameStartTime, getNow]);
 
-  const formatTimer = (ms: number) => {
-    const totalSec = ms / 1000;
-    const min = Math.floor(totalSec / 60);
-    const sec = Math.floor(totalSec % 60);
-    const hundredths = Math.floor((ms % 1000) / 10);
-    return `${min < 10 ? '0' : ''}${min}:${sec < 10 ? '0' : ''}${sec}.${hundredths < 10 ? '0' : ''}${hundredths}`;
-  };
+  useEffect(
+    () => () => {
+      if (completeTimer.current) clearTimeout(completeTimer.current);
+    },
+    []
+  );
 
-  // Sound effects / Audio feedback trigger
-  const playPopSound = () => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch (e) { }
-  };
-
-  const playErrorSound = () => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(220, ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(110, ctx.currentTime + 0.2);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.2);
-    } catch (e) { }
-  };
-
-  const playSuccessSound = () => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const notes = [523.25, 659.25, 783.99, 1046.5]; // C E G C
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.08);
-        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + i * 0.08 + 0.15);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + i * 0.08);
-        osc.stop(ctx.currentTime + i * 0.08 + 0.15);
-      });
-    } catch (e) { }
-  };
+  // エラー表示は1.8秒で自動的に消す
+  useEffect(() => {
+    if (!errorMessage) return;
+    const t = setTimeout(() => setErrorMessage(null), 1800);
+    return () => clearTimeout(t);
+  }, [errorMessage]);
 
   // Node Selection & Edge Tracing Handler
   const handleNodeClick = useCallback(
@@ -157,16 +164,17 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
       if (nextTraced.size === puzzle.edges.length) {
         setIsSuccess(true);
         playSuccessSound();
-        const duration = Date.now() - questionStartTime;
-        setTimeout(() => {
+        const duration = getNow() - questionStartTime;
+        completeTimer.current = setTimeout(() => {
           onCompleteQuestion(questionIndex, duration);
         }, 800);
       }
     },
-    [currentNodeId, isSuccess, puzzle, tracedEdgeKeys, questionIndex, questionStartTime, onCompleteQuestion]
+    [currentNodeId, isSuccess, puzzle, tracedEdgeKeys, questionIndex, questionStartTime, getNow, onCompleteQuestion]
   );
 
   const handleUndo = () => {
+    if (isSuccess) return;
     if (nodeHistory.length <= 1) {
       handleReset();
       return;
@@ -194,6 +202,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   };
 
   const handleReset = () => {
+    if (isSuccess) return;
     setCurrentNodeId(null);
     setTracedEdgeKeys(new Set());
     setNodeHistory([]);
@@ -320,7 +329,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
                     strokeWidth={isTraced ? '5' : '3'}
                     strokeDasharray={isTraced ? undefined : '6 4'}
                     strokeLinecap="round"
-                    className="transition-all duration-300"
+                    className={isTraced ? 'hf-line-traced' : undefined}
                   />
                 </g>
               );

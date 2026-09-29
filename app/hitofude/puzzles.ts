@@ -68,7 +68,7 @@ export const PUZZLES: Puzzle[] = [
     nodes: [
       { id: 'B1', x: 50, y: 70, label: 'L1' },
       { id: 'B2', x: 50, y: 230, label: 'L2' },
-      { id: 'B3', x: 150, y: 150, label: 'C' },
+      { id: 'B3', x: 150, y: 130, label: 'C' },
       { id: 'B4', x: 250, y: 70, label: 'R1' },
       { id: 'B5', x: 250, y: 230, label: 'R2' },
     ],
@@ -88,19 +88,17 @@ export const PUZZLES: Puzzle[] = [
   {
     id: 4,
     title: '第4問: 魔法の立方陣 (Magic Cube Grid)',
-    subtitle: '高難易度！9つの頂点と14本の網目状ラインを走破せよ！',
+    subtitle: '高難易度！7つの頂点と14本の網目状ラインを走破せよ！',
     difficulty: '★★★★☆',
     viewBox: '0 0 300 300',
     nodes: [
       { id: 'M1', x: 50, y: 50, label: '1' },
-      { id: 'M2', x: 150, y: 50, label: '2' },
+      { id: 'M2', x: 150, y: 80, label: '2' },
       { id: 'M3', x: 250, y: 50, label: '3' },
-      { id: 'M4', x: 50, y: 150, label: '4' },
-      { id: 'M5', x: 150, y: 150, label: '5' },
-      { id: 'M6', x: 250, y: 150, label: '6' },
-      { id: 'M7', x: 50, y: 250, label: '7' },
-      { id: 'M8', x: 150, y: 250, label: '8' },
-      { id: 'M9', x: 250, y: 250, label: '9' },
+      { id: 'M5', x: 150, y: 150, label: '4' },
+      { id: 'M7', x: 50, y: 250, label: '5' },
+      { id: 'M8', x: 150, y: 220, label: '6' },
+      { id: 'M9', x: 250, y: 250, label: '7' },
     ],
     edges: [
       // Outer square
@@ -121,12 +119,12 @@ export const PUZZLES: Puzzle[] = [
       { id: 'ME13', source: 'M8', target: 'M9' },
       { id: 'ME14', source: 'M8', target: 'M5' },
     ],
-    hint: '上中央(2)か下中央(8)から始めるのが黄金パターン！',
+    hint: '上中央(2)か下中央(6)から始めるのが黄金パターン！',
   },
   {
     id: 5,
     title: '第5問: 帝王のクラウン (Imperial Crown)',
-    subtitle: '最終決戦！17本の幾何学ラインが織りなす究極の一筆書き！',
+    subtitle: '最終決戦！19本の幾何学ラインが織りなす究極の一筆書き！',
     difficulty: '★★★★★',
     viewBox: '0 0 300 300',
     nodes: [
