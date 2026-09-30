@@ -181,6 +181,34 @@ export default function EventPage() {
             ? `🎉 ${allOkDates.map((d) => label(d.date)).join('、')}は全員参加できます`
             : '全員参加できる日はまだありません'}
         </p>
+
+        {/* 使い方 */}
+        <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-800 shadow-sm">
+          <h3 className="font-bold mb-2">📖 使い方</h3>
+          <ul className="space-y-2 list-disc pl-5">
+            <li>
+              カレンダーの日にちを<b>1回押すと ○</b>、<b>2回目で △</b>、<b>3回目で ×</b> になります。もう1回押すと ○ に戻ります。
+              <span className="block text-xs text-gray-500">○ = 行ける / △ = 行けるかも / × = 行けない</span>
+            </li>
+            <li>
+              <b>1日まるまる空いている日は ○ にしてもらえると助かります！</b>
+              <span className="block text-xs text-gray-500">時間帯だけ空いている日は △ にしてください。</span>
+            </li>
+            <li>押した瞬間に自動で保存されます。保存ボタンはありません。</li>
+            <li>みんなの回答はリアルタイムで反映されます。<b>太字</b>があなたの回答です。</li>
+            <li>「全員参加できる日」は、回答した人全員が ○ にした日です。</li>
+            <li>名前を間違えたときは、左上の<b>「名前を変える」</b>から直せます。今までの回答の名前もまとめて変わります。</li>
+            <li>
+              左上の<b>「ログアウト」</b>を押すと、<b>あなたの回答がすべて消えます</b>。
+              <span className="block font-bold text-red-600">
+                ※ログアウトすると自分の記録が消えちゃうので、終わったらログアウトせずタブをそのまま閉じてね。
+              </span>
+            </li>
+            <li>同じブラウザなら、次に開いたときも自動でログインされ、回答も残っています。</li>
+            <li>別のブラウザやスマホから開くと別の人として扱われます。回答するときは、いつも同じブラウザを使ってください。</li>
+            <li>右上の「🔗 リンクをコピー」で、このページのリンクをみんなに送れます。</li>
+          </ul>
+        </div>
       </section>
     </div>
   );
