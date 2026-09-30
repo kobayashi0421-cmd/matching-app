@@ -25,6 +25,18 @@ export default function EventPage() {
   const [draft, setDraft] = useState('');
   const prefilled = useRef(false);
 
+  // スプラッシュ('visible' -> 'fading' -> 'hidden')
+  const [splashState, setSplashState] = useState<'visible' | 'fading' | 'hidden'>('visible');
+
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => setSplashState('fading'), 1500); // 1.5秒後にフェードアウト開始
+    const hideTimer = setTimeout(() => setSplashState('hidden'), 2100); // 2.1秒後に完全に消す
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(hideTimer);
+    };
+  }, []);
+
   const loadResponses = useCallback(async () => {
     const { data } = await supabase.from('responses').select('*').eq('event_id', id);
     setResponses((data as Resp[]) ?? []);
@@ -65,8 +77,45 @@ export default function EventPage() {
     };
   }, [id, loadResponses]);
 
+  // スプラッシュ本体(名前入力画面のときも出せるよう、早期returnより前に作っておく)
+  const splash =
+    splashState !== 'hidden' ? (
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-400 transition-opacity duration-500 ${splashState === 'fading' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+      >
+        <div className="text-center text-white splash-pop">
+          <img
+            src="/images/鍋パ.png"
+            alt="日程調整"
+            className="w-24 h-24 mx-auto mb-4 object-contain splash-bounce"
+          />
+          <h1 className="text-3xl font-bold tracking-wide">日程調整</h1>
+          <p className="mt-2 text-sm opacity-90">みんなの予定をあわせよう</p>
+        </div>
+        <style>{`
+          @keyframes splash-pop {
+            from { opacity: 0; transform: translateY(16px) scale(0.92); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          @keyframes splash-bounce {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-10px); }
+          }
+          .splash-pop    { animation: splash-pop 0.7s ease-out both; }
+          .splash-bounce { animation: splash-bounce 1s ease-in-out 0.6s infinite; }
+        `}</style>
+      </div>
+    ) : null;
+
   if (!ready) return null;
-  if (!loggedIn) return <NameGate onLogin={login} />;
+  if (!loggedIn)
+    return (
+      <>
+        {splash}
+        <NameGate onLogin={login} />
+      </>
+    );
 
   // タップした瞬間に画面へ反映し、そのまま自動保存
   const setAnswer = async (dateId: string, answer: Answer) => {
@@ -112,6 +161,7 @@ export default function EventPage() {
 
   return (
     <div className="fixed inset-0 overflow-y-auto overscroll-contain">
+      {splash}
       <div className="max-w-2xl mx-auto px-4 py-8">
         {editing ? (
           <div className="flex items-center gap-2 mb-2">
