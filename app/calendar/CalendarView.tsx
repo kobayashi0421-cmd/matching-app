@@ -16,14 +16,19 @@ export function CalendarView({
   dates,
   responses,
   userId,
+  mine,
+  myName,
+  onCycle,
 }: {
   dates: DateRow[];
   responses: Resp[];
   userId: string | null;
+  mine: Record<string, Answer>;
+  myName: string;
+  onCycle: (dateId: string) => void;
 }) {
   const [offset, setOffset] = useState(0);
 
-  // 最初の候補日がある月を基準に表示
   const base = useMemo(() => {
     const d = dates.length ? new Date(dates[0].date + 'T00:00:00') : new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -40,15 +45,16 @@ export function CalendarView({
     return [...blanks, ...days] as (string | null)[];
   }, [month]);
 
-  // その日の表示対象: ○と△の人 + 自分(×でも自分の分は表示)
-  const chipsFor = (dateId: string) => {
-    const list = responses.filter((r) => r.date_id === dateId && (r.answer !== 'ng' || r.user_id === userId));
+  // 自分の分は「保存前のタップ状態(mine)」から作る。他の人は○と△だけ表示
+  const chipsFor = (dateId: string): Resp[] => {
     const order = { ok: 0, maybe: 1, ng: 2 } as const;
-    return list.sort((a, b) => {
-      if (a.user_id === userId) return -1;   // 自分を先頭に
-      if (b.user_id === userId) return 1;
-      return order[a.answer] - order[b.answer];
-    });
+    const others = responses
+      .filter((r) => r.date_id === dateId && r.user_id !== userId && r.answer !== 'ng')
+      .sort((a, b) => order[a.answer] - order[b.answer]);
+    const my = mine[dateId];
+    if (!my) return others;
+    const me: Resp = { id: `me-${dateId}`, date_id: dateId, user_id: userId ?? '', name: myName, answer: my };
+    return [me, ...others];
   };
 
   return (
@@ -76,7 +82,12 @@ export function CalendarView({
           }
           const chips = chipsFor(cand.id);
           return (
-            <div key={d} className="min-h-[4.5rem] rounded-lg border border-indigo-200 bg-indigo-50 p-1">
+            <button
+              type="button"
+              key={d}
+              onClick={() => onCycle(cand.id)}
+              className="min-h-[4.5rem] w-full text-left rounded-lg border border-indigo-200 bg-indigo-50 p-1 active:scale-95 transition"
+            >
               <div className="text-xs font-bold text-indigo-700 mb-0.5">{Number(d.slice(8))}</div>
               <div className="space-y-0.5">
                 {chips.slice(0, MAX_CHIPS).map((r) => (
@@ -97,13 +108,13 @@ export function CalendarView({
                   <div className="text-[10px] text-gray-500 px-1">+{chips.length - MAX_CHIPS}人</div>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
       <p className="text-[11px] text-gray-500 mt-2">
-        名前の左は回答です(○=行ける / △=微妙)。<span className="font-bold text-indigo-600">濃い青</span>があなたです。
+        日付をタップすると ○ → △ → × の順に切り替わります。<span className="font-bold text-indigo-600">濃い青</span>があなたです。
       </p>
     </div>
   );
