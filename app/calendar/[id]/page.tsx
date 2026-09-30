@@ -164,29 +164,7 @@ export default function EventPage() {
         {message && <p className="text-xs text-gray-600 mt-2 text-center">{message}</p>}
       </section>
 
-      {/* 自分の回答 */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm mb-8">
-        <h2 className="font-bold mb-3">あなたの回答(タップで自動保存)</h2>
-        <div className="space-y-2">
-          {dates.map((d) => (
-            <div key={d.id} className="flex items-center justify-between">
-              <span className="text-sm font-medium">{label(d.date)}</span>
-              <div className="flex gap-1.5">
-                {(['ok', 'maybe', 'ng'] as Answer[]).map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setAnswer(d.id, a)}
-                    className={`w-10 h-10 rounded-lg font-bold transition ${mine[d.id] === a ? COLOR[a] : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                  >
-                    {SYMBOL[a]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       {/* みんなの回答 */}
       <section>
