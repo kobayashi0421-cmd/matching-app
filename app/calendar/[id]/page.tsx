@@ -54,10 +54,11 @@ export default function EventPage() {
   }, [userId, responses]);
 
   // 他の人の回答をリアルタイム反映
+  // (DELETEイベントにはfilterが効かないため、filterなしで購読して loadResponses 側で絞る)
   useEffect(() => {
     const ch = supabase
       .channel(`responses-${id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'responses', filter: `event_id=eq.${id}` }, () => loadResponses())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'responses' }, () => loadResponses())
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -90,6 +91,7 @@ export default function EventPage() {
   };
 
   const handleLogout = async () => {
+    if (!confirm('ログアウトすると、あなたの回答もカレンダーから消えます。よろしいですか?')) return;
     await logout();
     setMine({});
     setMessage('');

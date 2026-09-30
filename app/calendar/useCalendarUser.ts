@@ -55,13 +55,16 @@ export function useCalendarUser() {
     [userId]
   );
 
-  // ログアウト
+  // ログアウト(自分の回答を全部消してからサインアウト → 他の人の画面からも名前が消える)
   const logout = useCallback(async () => {
+    if (userId) {
+      await supabase.from('responses').delete().eq('user_id', userId);
+    }
     await supabase.auth.signOut();
     localStorage.removeItem(NAME_KEY);
     setUserId(null);
     setName(null);
-  }, []);
+  }, [userId]);
 
   return { userId, name, ready, login, rename, logout, loggedIn: !!userId && !!name };
 }
