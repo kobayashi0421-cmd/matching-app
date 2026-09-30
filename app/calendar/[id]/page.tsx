@@ -86,7 +86,7 @@ export default function EventPage() {
       >
         <div className="text-center text-white splash-pop">
           <img
-            src="/images/鍋パ.png"
+            src="/images/nebe.png"
             alt="日程調整"
             className="w-24 h-24 mx-auto mb-4 object-contain splash-bounce"
           />
