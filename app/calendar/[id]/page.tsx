@@ -166,42 +166,7 @@ export default function EventPage() {
 
 
 
-      {/* みんなの回答 */}
-      <section>
-        <h2 className="font-bold mb-3">みんなの回答({participants.length}人)</h2>
-        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <table className="w-full text-sm text-center">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="p-3 text-left">名前</th>
-                {dates.map((d) => (
-                  <th key={d.id} className={`p-3 whitespace-nowrap ${maxOk > 0 && count(d.id, 'ok') === maxOk ? 'bg-emerald-50 text-emerald-700' : ''}`}>
-                    {label(d.date)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {participants.map(([uid, pname]) => (
-                <tr key={uid} className="border-t border-gray-100">
-                  <td className={`p-3 text-left font-medium ${uid === userId ? 'text-indigo-600' : ''}`}>{pname}{uid === userId && '(あなた)'}</td>
-                  {dates.map((d) => {
-                    const r = responses.find((x) => x.user_id === uid && x.date_id === d.id);
-                    return <td key={d.id} className="p-3 font-bold">{r ? SYMBOL[r.answer] : '-'}</td>;
-                  })}
-                </tr>
-              ))}
-              <tr className="border-t-2 border-gray-200 bg-gray-50 font-bold">
-                <td className="p-3 text-left">○ / △</td>
-                {dates.map((d) => (
-                  <td key={d.id} className="p-3">{count(d.id, 'ok')} / {count(d.id, 'maybe')}</td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-gray-500 mt-2">緑の日程が、○がいちばん多い候補日です。</p>
-      </section>
+
     </div>
   );
 }
