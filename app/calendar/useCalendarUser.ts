@@ -55,5 +55,13 @@ export function useCalendarUser() {
     [userId]
   );
 
-  return { userId, name, ready, login, rename, loggedIn: !!userId && !!name };
+  // ログアウト
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem(NAME_KEY);
+    setUserId(null);
+    setName(null);
+  }, []);
+
+  return { userId, name, ready, login, rename, logout, loggedIn: !!userId && !!name };
 }

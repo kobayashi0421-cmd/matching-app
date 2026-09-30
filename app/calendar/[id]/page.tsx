@@ -10,19 +10,12 @@ type Answer = 'ok' | 'maybe' | 'ng';
 type DateRow = { id: string; date: string };
 type Resp = { id: string; date_id: string; user_id: string; name: string; answer: Answer };
 
-const SYMBOL: Record<Answer, string> = { ok: '○', maybe: '△', ng: '×' };
-const COLOR: Record<Answer, string> = {
-  ok: 'bg-emerald-500 text-white',
-  maybe: 'bg-amber-400 text-white',
-  ng: 'bg-gray-400 text-white',
-};
-
 const label = (d: string) =>
   new Date(d + 'T00:00:00').toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' });
 
 export default function EventPage() {
   const { id } = useParams<{ id: string }>();
-  const { userId, name, ready, login, rename, loggedIn } = useCalendarUser();
+  const { userId, name, ready, login, rename, logout, loggedIn } = useCalendarUser();
   const [title, setTitle] = useState('');
   const [dates, setDates] = useState<DateRow[]>([]);
   const [responses, setResponses] = useState<Resp[]>([]);
@@ -96,10 +89,24 @@ export default function EventPage() {
     setMessage('リンクをコピーしました');
   };
 
-  // 集計
-  const participants = Array.from(new Map(responses.map((r) => [r.user_id, r.name])).entries());
-  const count = (dateId: string, a: Answer) => responses.filter((r) => r.date_id === dateId && r.answer === a).length;
-  const maxOk = Math.max(0, ...dates.map((d) => count(d.id, 'ok')));
+  const handleLogout = async () => {
+    await logout();
+    setMine({});
+    setMessage('');
+    prefilled.current = false;
+  };
+
+  // 全員○の日(回答した人 + 自分。2人以上のときだけ判定)
+  const allUsers = new Set(responses.map((r) => r.user_id));
+  if (userId) allUsers.add(userId);
+  const allOkDates = dates.filter((d) => {
+    if (allUsers.size < 2) return false;
+    return [...allUsers].every((u) =>
+      u === userId
+        ? mine[d.id] === 'ok'
+        : responses.some((r) => r.date_id === d.id && r.user_id === u && r.answer === 'ok')
+    );
+  });
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -142,6 +149,9 @@ export default function EventPage() {
           >
             名前を変える
           </button>
+          <button onClick={handleLogout} className="ml-2 underline text-gray-500">
+            ログアウト
+          </button>
         </p>
       )}
 
@@ -162,11 +172,14 @@ export default function EventPage() {
           onCycle={cycle}
         />
         {message && <p className="text-xs text-gray-600 mt-2 text-center">{message}</p>}
+
+        {/* 全員○の日 */}
+        <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-900">
+          {allOkDates.length > 0
+            ? `🎉 ${allOkDates.map((d) => label(d.date)).join('、')}は全員参加できます`
+            : '全員参加できる日はまだありません'}
+        </p>
       </section>
-
-
-
-
     </div>
   );
 }
