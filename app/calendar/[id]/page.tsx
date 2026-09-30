@@ -90,6 +90,7 @@ export default function EventPage() {
             alt="日程調整"
             className="w-100 h-100 mx-auto mb-4 object-contain splash-bounce"
           />
+          <h1 className="text-3xl font-bold tracking-wide">日程調整</h1>
         </div>
         <style>{`
           @keyframes splash-pop {
