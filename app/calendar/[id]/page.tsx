@@ -29,8 +29,8 @@ export default function EventPage() {
   const [splashState, setSplashState] = useState<'visible' | 'fading' | 'hidden'>('visible');
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setSplashState('fading'), 1500); // 1.5秒後にフェードアウト開始
-    const hideTimer = setTimeout(() => setSplashState('hidden'), 2100); // 2.1秒後に完全に消す
+    const fadeTimer = setTimeout(() => setSplashState('fading'), 2500); // 1.5秒後にフェードアウト開始
+    const hideTimer = setTimeout(() => setSplashState('hidden'), 3100); // 2.1秒後に完全に消す
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
