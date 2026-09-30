@@ -88,7 +88,7 @@ export default function EventPage() {
           <img
             src="/images/nabe.png"
             alt="日程調整"
-            className="w-40 h-40 mx-auto mb-4 object-contain splash-bounce"
+            className="w-64 h-64 mx-auto mb-4 object-contain splash-bounce"
           />
         </div>
         <style>{`
