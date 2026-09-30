@@ -112,104 +112,106 @@ export default function EventPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      {editing ? (
-        <div className="flex items-center gap-2 mb-2">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            maxLength={14}
-            autoFocus
-            className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm"
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {editing ? (
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              maxLength={14}
+              autoFocus
+              className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm"
+            />
+            <button
+              onClick={async () => {
+                try {
+                  await rename(draft);
+                  setEditing(false);
+                  setMessage('名前を変更しました');
+                } catch (e: any) {
+                  setMessage(e?.message ?? '変更に失敗しました');
+                }
+              }}
+              className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold"
+            >
+              変更
+            </button>
+            <button onClick={() => setEditing(false)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300">
+              キャンセル
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500 mb-1">
+            ログイン中: {name}{' '}
+            <button
+              onClick={() => {
+                setDraft(name ?? '');
+                setEditing(true);
+              }}
+              className="ml-1 underline text-indigo-600"
+            >
+              名前を変える
+            </button>
+            <button onClick={handleLogout} className="ml-2 underline text-gray-500">
+              ログアウト
+            </button>
+          </p>
+        )}
+
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <h1 className="text-2xl font-bold">{title}</h1>
+          <button onClick={copyLink} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 shrink-0">🔗 リンクをコピー</button>
+        </div>
+
+        {/* カレンダー(タップで ○→△→×、みんなの回答がリアルタイムで見える) */}
+        <section className="mb-8">
+          <h2 className="font-bold mb-3">カレンダー</h2>
+          <CalendarView
+            dates={dates}
+            responses={responses}
+            userId={userId}
+            mine={mine}
+            myName={name ?? ''}
+            onCycle={cycle}
           />
-          <button
-            onClick={async () => {
-              try {
-                await rename(draft);
-                setEditing(false);
-                setMessage('名前を変更しました');
-              } catch (e: any) {
-                setMessage(e?.message ?? '変更に失敗しました');
-              }
-            }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold"
-          >
-            変更
-          </button>
-          <button onClick={() => setEditing(false)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300">
-            キャンセル
-          </button>
-        </div>
-      ) : (
-        <p className="text-xs text-gray-500 mb-1">
-          ログイン中: {name}{' '}
-          <button
-            onClick={() => {
-              setDraft(name ?? '');
-              setEditing(true);
-            }}
-            className="ml-1 underline text-indigo-600"
-          >
-            名前を変える
-          </button>
-          <button onClick={handleLogout} className="ml-2 underline text-gray-500">
-            ログアウト
-          </button>
-        </p>
-      )}
+          {message && <p className="text-xs text-gray-600 mt-2 text-center">{message}</p>}
 
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold">{title}</h1>
-        <button onClick={copyLink} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 shrink-0">🔗 リンクをコピー</button>
+          {/* 全員○の日 */}
+          <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-900">
+            {allOkDates.length > 0
+              ? `🎉 ${allOkDates.map((d) => label(d.date)).join('、')}は全員参加できます`
+              : '全員参加できる日はまだありません'}
+          </p>
+
+          {/* 使い方 */}
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-800 shadow-sm">
+            <h3 className="font-bold mb-2">📖 使い方</h3>
+            <ul className="space-y-2 list-disc pl-5">
+              <li>
+                カレンダーの日にちを<b>1回押すと ○</b>、<b>2回目で △</b>、<b>3回目で ×</b> になります。もう1回押すと ○ に戻ります。
+                <span className="block text-xs text-gray-500">○ = 行ける / △ = 行けるかも / × = 行けない</span>
+              </li>
+              <li>
+                <b>1日まるまる空いている日は ○ にしてもらえると助かります！</b>
+                <span className="block text-xs text-gray-500">時間帯だけ空いている日は △ にしてください。</span>
+              </li>
+              <li>押した瞬間に自動で保存されます。保存ボタンはありません。</li>
+              <li>みんなの回答はリアルタイムで反映されます。<b>太字</b>があなたの回答です。</li>
+              <li>「全員参加できる日」は、回答した人全員が ○ にした日です。</li>
+              <li>名前を間違えたときは、左上の<b>「名前を変える」</b>から直せます。今までの回答の名前もまとめて変わります。</li>
+              <li>
+                左上の<b>「ログアウト」</b>を押すと、<b>あなたの回答がすべて消えます</b>。
+                <span className="block font-bold text-red-600">
+                  ※ログアウトすると自分の記録が消えちゃうので、終わったらログアウトせずタブをそのまま閉じてね。
+                </span>
+              </li>
+              <li>同じブラウザなら、次に開いたときも自動でログインされ、回答も残っています。</li>
+              <li>別のブラウザやスマホから開くと別の人として扱われます。回答するときは、いつも同じブラウザを使ってください。</li>
+              <li>右上の「🔗 リンクをコピー」で、このページのリンクをみんなに送れます。</li>
+            </ul>
+          </div>
+        </section>
       </div>
-
-      {/* カレンダー(タップで ○→△→×、みんなの回答がリアルタイムで見える) */}
-      <section className="mb-8">
-        <h2 className="font-bold mb-3">カレンダー</h2>
-        <CalendarView
-          dates={dates}
-          responses={responses}
-          userId={userId}
-          mine={mine}
-          myName={name ?? ''}
-          onCycle={cycle}
-        />
-        {message && <p className="text-xs text-gray-600 mt-2 text-center">{message}</p>}
-
-        {/* 全員○の日 */}
-        <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-900">
-          {allOkDates.length > 0
-            ? `🎉 ${allOkDates.map((d) => label(d.date)).join('、')}は全員参加できます`
-            : '全員参加できる日はまだありません'}
-        </p>
-
-        {/* 使い方 */}
-        <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-800 shadow-sm">
-          <h3 className="font-bold mb-2">📖 使い方</h3>
-          <ul className="space-y-2 list-disc pl-5">
-            <li>
-              カレンダーの日にちを<b>1回押すと ○</b>、<b>2回目で △</b>、<b>3回目で ×</b> になります。もう1回押すと ○ に戻ります。
-              <span className="block text-xs text-gray-500">○ = 行ける / △ = 行けるかも / × = 行けない</span>
-            </li>
-            <li>
-              <b>1日まるまる空いている日は ○ にしてもらえると助かります！</b>
-              <span className="block text-xs text-gray-500">時間帯だけ空いている日は △ にしてください。</span>
-            </li>
-            <li>押した瞬間に自動で保存されます。保存ボタンはありません。</li>
-            <li>みんなの回答はリアルタイムで反映されます。<b>太字</b>があなたの回答です。</li>
-            <li>「全員参加できる日」は、回答した人全員が ○ にした日です。</li>
-            <li>名前を間違えたときは、左上の<b>「名前を変える」</b>から直せます。今までの回答の名前もまとめて変わります。</li>
-            <li>
-              左上の<b>「ログアウト」</b>を押すと、<b>あなたの回答がすべて消えます</b>。
-              <span className="block font-bold text-red-600">
-                ※ログアウトすると自分の記録が消えちゃうので、終わったらログアウトせずタブをそのまま閉じてね。
-              </span>
-            </li>
-            <li>同じブラウザなら、次に開いたときも自動でログインされ、回答も残っています。</li>
-            <li>別のブラウザやスマホから開くと別の人として扱われます。回答するときは、いつも同じブラウザを使ってください。</li>
-            <li>右上の「🔗 リンクをコピー」で、このページのリンクをみんなに送れます。</li>
-          </ul>
-        </div>
-      </section>
     </div>
   );
 }
