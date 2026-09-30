@@ -19,6 +19,8 @@ export default function CalendarCreatePage() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
 
   const today = fmt(new Date());
 
@@ -37,6 +39,22 @@ export default function CalendarCreatePage() {
     const next = new Set(selected);
     next.has(d) ? next.delete(d) : next.add(d);
     setSelected(next);
+  };
+  const addRange = () => {
+    if (!rangeStart || !rangeEnd) return setError('開始日と終了日を選んでください');
+    if (rangeStart > rangeEnd) return setError('終了日は開始日以降にしてください');
+    const next = new Set(selected);
+    const cur = new Date(rangeStart + 'T00:00:00');
+    const end = new Date(rangeEnd + 'T00:00:00');
+    let guard = 0;
+    while (cur <= end && guard++ < 366) {
+      const s = fmt(cur);
+      if (s >= today) next.add(s); // 過去日は除外
+      cur.setDate(cur.getDate() + 1);
+    }
+    setSelected(next);
+    setMonth(new Date(rangeStart.slice(0, 4) as any, Number(rangeStart.slice(5, 7)) - 1, 1)); // 開始月にカレンダーを移動
+    setError('');
   };
 
   const create = async () => {
@@ -91,13 +109,12 @@ export default function CalendarCreatePage() {
                 key={d}
                 disabled={d < today}
                 onClick={() => toggle(d)}
-                className={`aspect-square rounded-lg text-sm transition ${
-                  selected.has(d)
+                className={`aspect-square rounded-lg text-sm transition ${selected.has(d)
                     ? 'bg-indigo-600 text-white font-bold'
                     : d < today
-                    ? 'text-gray-300'
-                    : 'text-gray-900 hover:bg-indigo-50'
-                }`}
+                      ? 'text-gray-300'
+                      : 'text-gray-900 hover:bg-indigo-50'
+                  }`}
               >
                 {Number(d.slice(8))}
               </button>
