@@ -84,6 +84,15 @@ export default function EventPage() {
     setMessage(error ? '保存に失敗しました: ' + error.message : '保存しました!');
   };
 
+  // カレンダーの日付タップで ○ → △ → × → ○ … と切り替え
+  const cycle = (dateId: string) => {
+    setMine((prev) => {
+      const cur = prev[dateId];
+      const next: Answer = !cur ? 'ok' : cur === 'ok' ? 'maybe' : cur === 'maybe' ? 'ng' : 'ok';
+      return { ...prev, [dateId]: next };
+    });
+  };
+
   const copyLink = async () => {
     await navigator.clipboard.writeText(window.location.href);
     setMessage('リンクをコピーしました');
@@ -102,10 +111,17 @@ export default function EventPage() {
         <button onClick={copyLink} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 shrink-0">🔗 リンクをコピー</button>
       </div>
 
-      {/* カレンダー(日付の下に回答者の名前) */}
+      {/* カレンダー(日付をタップで回答を切り替え) */}
       <section className="mb-8">
         <h2 className="font-bold mb-3">カレンダー</h2>
-        <CalendarView dates={dates} responses={responses} userId={userId} />
+        <CalendarView
+          dates={dates}
+          responses={responses}
+          userId={userId}
+          mine={mine}
+          myName={name ?? ''}
+          onCycle={cycle}
+        />
       </section>
 
       {/* 自分の回答 */}
@@ -120,9 +136,8 @@ export default function EventPage() {
                   <button
                     key={a}
                     onClick={() => setMine({ ...mine, [d.id]: a })}
-                    className={`w-10 h-10 rounded-lg font-bold transition ${
-                      mine[d.id] === a ? COLOR[a] : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
+                    className={`w-10 h-10 rounded-lg font-bold transition ${mine[d.id] === a ? COLOR[a] : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
                   >
                     {SYMBOL[a]}
                   </button>
