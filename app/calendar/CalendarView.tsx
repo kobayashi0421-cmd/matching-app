@@ -93,14 +93,12 @@ export function CalendarView({
                 {chips.slice(0, MAX_CHIPS).map((r) => (
                   <div
                     key={r.id}
-                    className={`flex items-center gap-0.5 rounded px-1 text-[10px] leading-4 ${r.user_id === userId
-                        ? 'bg-indigo-600 text-white font-bold'
-                        : r.answer === 'ok'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : r.answer === 'maybe'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-gray-200 text-gray-600'
-                      }`}
+                    className={`flex items-center gap-0.5 rounded px-1 text-[10px] leading-4 ${r.answer === 'ok'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : r.answer === 'maybe'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-gray-200 text-gray-600'
+                      } ${r.user_id === userId ? 'font-bold' : ''}`}
                   >
                     <span className="shrink-0">{SYMBOL[r.answer]}</span>
                     <span className="truncate">{r.name}</span>
@@ -116,7 +114,7 @@ export function CalendarView({
       </div>
 
       <p className="text-[11px] text-gray-500 mt-2">
-        日付をタップすると ○ → △ → × の順に切り替わり、すぐ保存されます。<span className="font-bold text-indigo-600">濃い青</span>があなたです。
+        日付をタップすると ○ → △ → × の順に切り替わり、すぐ保存されます。<span className="font-bold">太字</span>があなたです。
       </p>
     </div>
   );
