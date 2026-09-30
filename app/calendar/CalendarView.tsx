@@ -10,7 +10,7 @@ const SYMBOL: Record<Answer, string> = { ok: '○', maybe: '△', ng: '×' };
 const fmt = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-const MAX_CHIPS = 3;
+const MAX_CHIPS = 5;
 
 export function CalendarView({
   dates,
@@ -45,11 +45,11 @@ export function CalendarView({
     return [...blanks, ...days] as (string | null)[];
   }, [month]);
 
-  // 自分の分は「保存前のタップ状態(mine)」から作る。他の人は○と△だけ表示
+  // 自分は mine(タップ直後の状態)、他の人は全員(×も)表示
   const chipsFor = (dateId: string): Resp[] => {
     const order = { ok: 0, maybe: 1, ng: 2 } as const;
     const others = responses
-      .filter((r) => r.date_id === dateId && r.user_id !== userId && r.answer !== 'ng')
+      .filter((r) => r.date_id === dateId && r.user_id !== userId)
       .sort((a, b) => order[a.answer] - order[b.answer]);
     const my = mine[dateId];
     if (!my) return others;
@@ -97,7 +97,9 @@ export function CalendarView({
                         ? 'bg-indigo-600 text-white font-bold'
                         : r.answer === 'ok'
                           ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
+                          : r.answer === 'maybe'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-gray-200 text-gray-600'
                       }`}
                   >
                     <span className="shrink-0">{SYMBOL[r.answer]}</span>
@@ -114,7 +116,7 @@ export function CalendarView({
       </div>
 
       <p className="text-[11px] text-gray-500 mt-2">
-        日付をタップすると ○ → △ → × の順に切り替わります。<span className="font-bold text-indigo-600">濃い青</span>があなたです。
+        日付をタップすると ○ → △ → × の順に切り替わり、すぐ保存されます。<span className="font-bold text-indigo-600">濃い青</span>があなたです。
       </p>
     </div>
   );

@@ -27,7 +27,6 @@ export default function EventPage() {
   const [dates, setDates] = useState<DateRow[]>([]);
   const [responses, setResponses] = useState<Resp[]>([]);
   const [mine, setMine] = useState<Record<string, Answer>>({});
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const prefilled = useRef(false);
 
@@ -73,24 +72,21 @@ export default function EventPage() {
   if (!ready) return null;
   if (!loggedIn) return <NameGate onLogin={login} />;
 
-  const save = async () => {
-    setSaving(true);
-    setMessage('');
-    const rows = dates
-      .filter((d) => mine[d.id])
-      .map((d) => ({ event_id: id, date_id: d.id, user_id: userId, name, answer: mine[d.id], updated_at: new Date().toISOString() }));
-    const { error } = await supabase.from('responses').upsert(rows, { onConflict: 'date_id,user_id' });
-    setSaving(false);
-    setMessage(error ? '保存に失敗しました: ' + error.message : '保存しました!');
+  // タップした瞬間に画面へ反映し、そのまま自動保存
+  const setAnswer = async (dateId: string, answer: Answer) => {
+    setMine((prev) => ({ ...prev, [dateId]: answer }));
+    const { error } = await supabase.from('responses').upsert(
+      { event_id: id, date_id: dateId, user_id: userId, name, answer, updated_at: new Date().toISOString() },
+      { onConflict: 'date_id,user_id' }
+    );
+    setMessage(error ? '保存に失敗しました: ' + error.message : '');
   };
 
-  // カレンダーの日付タップで ○ → △ → × → ○ … と切り替え
+  // ○ → △ → × → ○ …
   const cycle = (dateId: string) => {
-    setMine((prev) => {
-      const cur = prev[dateId];
-      const next: Answer = !cur ? 'ok' : cur === 'ok' ? 'maybe' : cur === 'maybe' ? 'ng' : 'ok';
-      return { ...prev, [dateId]: next };
-    });
+    const cur = mine[dateId];
+    const next: Answer = !cur ? 'ok' : cur === 'ok' ? 'maybe' : cur === 'maybe' ? 'ng' : 'ok';
+    setAnswer(dateId, next);
   };
 
   const copyLink = async () => {
@@ -111,7 +107,7 @@ export default function EventPage() {
         <button onClick={copyLink} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 shrink-0">🔗 リンクをコピー</button>
       </div>
 
-      {/* カレンダー(日付をタップで回答を切り替え) */}
+      {/* カレンダー(タップで ○→△→×、みんなの回答がリアルタイムで見える) */}
       <section className="mb-8">
         <h2 className="font-bold mb-3">カレンダー</h2>
         <CalendarView
@@ -122,35 +118,9 @@ export default function EventPage() {
           myName={name ?? ''}
           onCycle={cycle}
         />
-      </section>
-
-      {/* 自分の回答 */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm mb-8">
-        <h2 className="font-bold mb-3">あなたの回答</h2>
-        <div className="space-y-2">
-          {dates.map((d) => (
-            <div key={d.id} className="flex items-center justify-between">
-              <span className="text-sm font-medium">{label(d.date)}</span>
-              <div className="flex gap-1.5">
-                {(['ok', 'maybe', 'ng'] as Answer[]).map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setMine({ ...mine, [d.id]: a })}
-                    className={`w-10 h-10 rounded-lg font-bold transition ${mine[d.id] === a ? COLOR[a] : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                  >
-                    {SYMBOL[a]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <button onClick={save} disabled={saving} className="w-full mt-4 py-3 rounded-xl bg-indigo-600 text-white font-bold disabled:opacity-50">
-          {saving ? '保存中...' : '回答を保存(何度でも変更できます)'}
-        </button>
         {message && <p className="text-xs text-gray-600 mt-2 text-center">{message}</p>}
       </section>
+
 
       {/* みんなの回答 */}
       <section>
