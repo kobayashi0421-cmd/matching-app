@@ -111,7 +111,7 @@ export default function EventPage() {
   });
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="fixed inset-0 overflow-y-auto overscroll-contain">
       <div className="max-w-2xl mx-auto px-4 py-8">
         {editing ? (
           <div className="flex items-center gap-2 mb-2">
