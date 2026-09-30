@@ -22,12 +22,14 @@ const label = (d: string) =>
 
 export default function EventPage() {
   const { id } = useParams<{ id: string }>();
-  const { userId, name, ready, login, loggedIn } = useCalendarUser();
+  const { userId, name, ready, login, rename, loggedIn } = useCalendarUser();
   const [title, setTitle] = useState('');
   const [dates, setDates] = useState<DateRow[]>([]);
   const [responses, setResponses] = useState<Resp[]>([]);
   const [mine, setMine] = useState<Record<string, Answer>>({});
   const [message, setMessage] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
   const prefilled = useRef(false);
 
   const loadResponses = useCallback(async () => {
@@ -101,7 +103,48 @@ export default function EventPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <p className="text-xs text-gray-500 mb-1">ログイン中: {name}</p>
+      {editing ? (
+        <div className="flex items-center gap-2 mb-2">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            maxLength={14}
+            autoFocus
+            className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm"
+          />
+          <button
+            onClick={async () => {
+              try {
+                await rename(draft);
+                setEditing(false);
+                setMessage('名前を変更しました');
+              } catch (e: any) {
+                setMessage(e?.message ?? '変更に失敗しました');
+              }
+            }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold"
+          >
+            変更
+          </button>
+          <button onClick={() => setEditing(false)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300">
+            キャンセル
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500 mb-1">
+          ログイン中: {name}{' '}
+          <button
+            onClick={() => {
+              setDraft(name ?? '');
+              setEditing(true);
+            }}
+            className="ml-1 underline text-indigo-600"
+          >
+            名前を変える
+          </button>
+        </p>
+      )}
+
       <div className="flex items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold">{title}</h1>
         <button onClick={copyLink} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 shrink-0">🔗 リンクをコピー</button>
@@ -121,6 +164,29 @@ export default function EventPage() {
         {message && <p className="text-xs text-gray-600 mt-2 text-center">{message}</p>}
       </section>
 
+      {/* 自分の回答 */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm mb-8">
+        <h2 className="font-bold mb-3">あなたの回答(タップで自動保存)</h2>
+        <div className="space-y-2">
+          {dates.map((d) => (
+            <div key={d.id} className="flex items-center justify-between">
+              <span className="text-sm font-medium">{label(d.date)}</span>
+              <div className="flex gap-1.5">
+                {(['ok', 'maybe', 'ng'] as Answer[]).map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAnswer(d.id, a)}
+                    className={`w-10 h-10 rounded-lg font-bold transition ${mine[d.id] === a ? COLOR[a] : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                  >
+                    {SYMBOL[a]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* みんなの回答 */}
       <section>

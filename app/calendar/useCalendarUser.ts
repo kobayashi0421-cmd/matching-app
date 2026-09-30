@@ -41,5 +41,19 @@ export function useCalendarUser() {
     setName(trimmed);
   }, []);
 
-  return { userId, name, ready, login, loggedIn: !!userId && !!name };
+  // 名前の変更(自分の過去の回答の名前もまとめて更新)
+  const rename = useCallback(
+    async (input: string) => {
+      const trimmed = input.trim();
+      if (!trimmed) throw new Error('名前を入力してください');
+      if (!userId) return;
+      const { error } = await supabase.from('responses').update({ name: trimmed }).eq('user_id', userId);
+      if (error) throw error;
+      localStorage.setItem(NAME_KEY, trimmed);
+      setName(trimmed);
+    },
+    [userId]
+  );
+
+  return { userId, name, ready, login, rename, loggedIn: !!userId && !!name };
 }
