@@ -81,17 +81,15 @@ export default function EventPage() {
   const splash =
     splashState !== 'hidden' ? (
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-400 transition-opacity duration-500 ${splashState === 'fading' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-orange-500 to-amber-400 transition-opacity duration-500 ${splashState === 'fading' ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
       >
         <div className="text-center text-white splash-pop">
           <img
             src="/images/nabe.png"
             alt="日程調整"
-            className="w-24 h-24 mx-auto mb-4 object-contain splash-bounce"
+            className="w-40 h-40 mx-auto mb-4 object-contain splash-bounce"
           />
-          <h1 className="text-3xl font-bold tracking-wide">日程調整</h1>
-          <p className="mt-2 text-sm opacity-90">みんなの予定をあわせよう</p>
         </div>
         <style>{`
           @keyframes splash-pop {
