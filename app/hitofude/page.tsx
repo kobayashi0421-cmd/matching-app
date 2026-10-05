@@ -170,7 +170,7 @@ export default function HitofudeGamePage() {
           <SpectatorPanel roomState={state} onExitSpectator={handleExitSpectator} />
         ) : session.role === 'player' && currentPlayer ? (
           <>
-            {state.status === 'lobby' && (
+            {(currentPlayer.status === 'kicked' || state.status === 'lobby') && (
               <Lobby
                 roomState={state}
                 onJoinAsPlayer={handleJoinAsPlayer}
@@ -182,7 +182,7 @@ export default function HitofudeGamePage() {
               />
             )}
 
-            {state.status === 'countdown' && (
+            {currentPlayer.status !== 'kicked' && state.status === 'countdown' && (
               <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-50 flex flex-col items-center justify-center text-center p-6">
                 <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 animate-bounce mb-6 font-mono">
                   {remainingSec}
@@ -192,7 +192,7 @@ export default function HitofudeGamePage() {
               </div>
             )}
 
-            {state.status === 'in_game' &&
+            {currentPlayer.status !== 'kicked' && state.status === 'in_game' &&
               (currentPlayer.status === 'finished' ? (
                 <Leaderboard roomState={state} onBackToLobby={handleLeave} />
               ) : (
@@ -206,7 +206,7 @@ export default function HitofudeGamePage() {
                 />
               ))}
 
-            {state.status === 'finished' && <Leaderboard roomState={state} onBackToLobby={handleLeave} />}
+            {currentPlayer.status !== 'kicked' && state.status === 'finished' && <Leaderboard roomState={state} onBackToLobby={handleLeave} />}
           </>
         ) : (
           <Lobby

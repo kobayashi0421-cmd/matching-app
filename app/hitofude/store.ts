@@ -54,20 +54,25 @@ function settle(s: RoomState): RoomState {
 /** ロビーで全員が「準備OK」になったらカウントダウンを始める */
 function maybeStart(s: RoomState, now: number): RoomState {
   if (s.status !== 'lobby') return s;
-  if (s.players.length < MIN_PLAYERS || !s.players.every((p) => p.status === 'ready')) return s;
+  const active = s.players.filter((p) => p.status !== 'kicked');
+  if (active.length < MIN_PLAYERS || !active.every((p) => p.status === 'ready')) return s;
   return {
     ...s,
     status: 'countdown',
     startAt: now + COUNTDOWN_MS,
-    players: s.players.map((p) => ({
-      ...p,
-      status: 'playing' as const,
-      currentQuestion: 1,
-      questionTimes: [],
-      totalTimeMs: undefined,
-      finishTime: undefined,
-      left: false,
-    })),
+    players: s.players.map((p) =>
+      p.status === 'kicked'
+        ? p // 強制退出した人は復活させない
+        : {
+            ...p,
+            status: 'playing' as const,
+            currentQuestion: 1,
+            questionTimes: [],
+            totalTimeMs: undefined,
+            finishTime: undefined,
+            left: false,
+          }
+    ),
   };
 }
 
@@ -375,6 +380,30 @@ class HitofudeStore {
     await this.mutate((s) => ({ ...s, spectators: s.spectators.filter((x) => x.id !== id) }));
   }
 
+  // --- 管理用(/kanri から使う) ---
+
+  /** 強制退出。本人の画面には「キックされました」と出る */
+  public async kickPlayer(playerId: string) {
+    await this.mutate((s, now) => {
+      if (!s.players.some((p) => p.id === playerId)) return null;
+      const next: RoomState = {
+        ...s,
+        players: s.players.map((p) => (p.id === playerId ? { ...p, status: 'kicked' as const } : p)),
+        kickedPlayerIds: [...new Set([...s.kickedPlayerIds, playerId])],
+      };
+      return maybeStart(settle(next), now);
+    });
+  }
+
+  /** 走っている人がいても対戦を終了して順位表を出す */
+  public async forceEnd() {
+    await this.mutate((s) => (s.status === 'in_game' ? { ...s, status: 'finished' } : null));
+  }
+
+  public async resetRoom() {
+    await this.mutate((s) => ({ ...createInitialState(), spectators: s.spectators }));
+  }
+
   /** ロビーで「準備OK」を押す/取り消す。全員OKになった瞬間にカウントダウン開始 */
   public async setReady(playerId: string, ready: boolean) {
     await this.mutate((s, now) => {
@@ -422,7 +451,7 @@ class HitofudeStore {
         return maybeStart({ ...s, players: s.players.filter((p) => p.id !== id) }, now);
       }
       const players = s.players.map((p) => (p.id === id ? { ...p, left: true } : p));
-      if (players.every((p) => p.left)) return { ...createInitialState(), spectators: s.spectators };
+      if (players.every((p) => p.left || p.status === 'kicked')) return { ...createInitialState(), spectators: s.spectators };
       return settle({ ...s, players });
     });
   }
