@@ -56,4 +56,4 @@ export interface Puzzle {
   hint?: string;
 }
 
-export type UserRole = 'player' | 'spectator' | 'admin' | null;
+export type UserRole = 'player' | 'spectator' | null;

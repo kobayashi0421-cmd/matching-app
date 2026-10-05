@@ -5,9 +5,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { RoomState } from './types';
 import { PUZZLES } from './puzzles';
-import { hitofudeStore, resolveState } from './store';
+import { hitofudeStore, resolveState, isRoomStale } from './store';
 import { Lobby } from './components/Lobby';
-import { AdminPanel } from './components/AdminPanel';
 import { SpectatorPanel } from './components/SpectatorPanel';
 import { PuzzleCanvas } from './components/PuzzleCanvas';
 import { Leaderboard } from './components/Leaderboard';
@@ -24,7 +23,6 @@ export default function HitofudeGamePage() {
   const [roomState, setRoomState] = useState<RoomState>(hitofudeStore.getState());
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState<Session>({ role: null });
-  const [adminOpen, setAdminOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [, setTick] = useState(0);
   const restored = useRef(false);
@@ -111,13 +109,25 @@ export default function HitofudeGamePage() {
     if (id) void hitofudeStore.leavePlayer(id);
   };
 
-  const handleCompleteQuestion = (questionIndex: number, durationMs: number) => {
-    if (currentPlayer) {
-      void hitofudeStore.recordQuestionCompletion(currentPlayer.id, questionIndex, durationMs);
+  const handleToggleReady = () => {
+    if (!currentPlayer) return;
+    void hitofudeStore.setReady(currentPlayer.id, currentPlayer.status !== 'ready');
+  };
+
+  // 保存に失敗しても、進んでいなければ最大4回やり直す
+  const handleCompleteQuestion = async (questionIndex: number, durationMs: number) => {
+    if (!currentPlayer) return;
+    const id = currentPlayer.id;
+    for (let i = 0; i < 4; i++) {
+      await hitofudeStore.recordQuestionCompletion(id, questionIndex, durationMs);
+      const me = hitofudeStore.getState().players.find((p) => p.id === id);
+      if (!me || me.status !== 'playing' || me.currentQuestion !== questionIndex) return;
+      await new Promise((r) => setTimeout(r, 600));
     }
   };
 
   const remainingSec = Math.max(1, Math.ceil(((state.startAt ?? 0) - hitofudeStore.serverNow()) / 1000));
+  const canJoin = state.status === 'lobby' || isRoomStale(state, hitofudeStore.serverNow());
 
   return (
     <div className="hf-root min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col relative selection:bg-indigo-500 selection:text-white overflow-x-hidden">
@@ -142,60 +152,37 @@ export default function HitofudeGamePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {(adminOpen || session.role) && (
-              <div className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 border bg-slate-900 border-slate-800">
-                {adminOpen && <span className="text-amber-400">👑 管理者モード</span>}
-                {!adminOpen && session.role === 'spectator' && <span className="text-indigo-400">👁️ 観戦モード</span>}
-                {!adminOpen && session.role === 'player' && (
-                  <span className="text-emerald-400 flex items-center gap-1">
-                    <span>🎮</span> {currentPlayer?.name || 'プレイヤー'}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {!adminOpen && (
-              <button
-                onClick={() => setAdminOpen(true)}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-all"
-              >
-                👑 管理者画面
-              </button>
-            )}
-          </div>
+          {session.role && (
+            <div className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 border bg-slate-900 border-slate-800">
+              {session.role === 'spectator' && <span className="text-indigo-400">👁️ 観戦モード</span>}
+              {session.role === 'player' && (
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <span>🎮</span> {currentPlayer?.name || 'プレイヤー'}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
       <main className="flex-1 flex flex-col justify-center">
-        {/* 管理者画面は上に重ねるだけ。閉じれば元の役割(プレイヤー/観戦)にそのまま戻る */}
-        {adminOpen ? (
-          <AdminPanel
-            roomState={state}
-            onKickPlayer={(id) => void hitofudeStore.kickPlayer(id)}
-            onStartGame={() => void hitofudeStore.startGame()}
-            onForceEnd={() => void hitofudeStore.forceEnd()}
-            onResetRoom={() => void hitofudeStore.resetRoom()}
-            onExitAdmin={() => setAdminOpen(false)}
-          />
-        ) : session.role === 'spectator' ? (
+        {session.role === 'spectator' ? (
           <SpectatorPanel roomState={state} onExitSpectator={handleExitSpectator} />
         ) : session.role === 'player' && currentPlayer ? (
           <>
-            {/* キックはどの段階でも最優先で表示 */}
-            {(currentPlayer.status === 'kicked' || state.status === 'lobby') && (
+            {state.status === 'lobby' && (
               <Lobby
                 roomState={state}
                 onJoinAsPlayer={handleJoinAsPlayer}
                 onJoinAsSpectator={handleJoinAsSpectator}
-                onSelectAdmin={() => setAdminOpen(true)}
+                onToggleReady={handleToggleReady}
                 currentPlayer={currentPlayer}
                 userRole="player"
                 onLeave={handleLeave}
               />
             )}
 
-            {currentPlayer.status !== 'kicked' && state.status === 'countdown' && (
+            {state.status === 'countdown' && (
               <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-50 flex flex-col items-center justify-center text-center p-6">
                 <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 animate-bounce mb-6 font-mono">
                   {remainingSec}
@@ -205,38 +192,33 @@ export default function HitofudeGamePage() {
               </div>
             )}
 
-            {currentPlayer.status !== 'kicked' && state.status === 'in_game' && (
-              <>
-                {currentPlayer.status === 'finished' ? (
-                  <Leaderboard roomState={state} onBackToLobby={handleLeave} />
-                ) : (
-                  <PuzzleCanvas
-                    key={currentPlayer.currentQuestion}
-                    puzzle={PUZZLES[Math.min(currentPlayer.currentQuestion - 1, PUZZLES.length - 1)]}
-                    questionIndex={currentPlayer.currentQuestion}
-                    gameStartTime={state.startAt ?? hitofudeStore.serverNow()}
-                    getNow={hitofudeStore.serverNow}
-                    onCompleteQuestion={handleCompleteQuestion}
-                  />
-                )}
-              </>
-            )}
+            {state.status === 'in_game' &&
+              (currentPlayer.status === 'finished' ? (
+                <Leaderboard roomState={state} onBackToLobby={handleLeave} />
+              ) : (
+                <PuzzleCanvas
+                  key={currentPlayer.currentQuestion}
+                  puzzle={PUZZLES[Math.min(currentPlayer.currentQuestion - 1, PUZZLES.length - 1)]}
+                  questionIndex={currentPlayer.currentQuestion}
+                  gameStartTime={state.startAt ?? hitofudeStore.serverNow()}
+                  getNow={hitofudeStore.serverNow}
+                  onCompleteQuestion={handleCompleteQuestion}
+                />
+              ))}
 
-            {currentPlayer.status !== 'kicked' && state.status === 'finished' && (
-              <Leaderboard roomState={state} onBackToLobby={handleLeave} />
-            )}
+            {state.status === 'finished' && <Leaderboard roomState={state} onBackToLobby={handleLeave} />}
           </>
         ) : (
           <Lobby
             roomState={state}
             onJoinAsPlayer={handleJoinAsPlayer}
             onJoinAsSpectator={handleJoinAsSpectator}
-            onSelectAdmin={() => setAdminOpen(true)}
+            onToggleReady={handleToggleReady}
             currentPlayer={null}
             userRole={null}
             onLeave={handleLeave}
             notice={notice}
-            canJoin={state.status === 'lobby'}
+            canJoin={canJoin}
           />
         )}
       </main>

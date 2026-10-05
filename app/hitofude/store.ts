@@ -4,6 +4,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { RoomState, Player, Spectator } from './types';
 
 export const COUNTDOWN_MS = 3000;
+/** 全員が準備OKでスタートするのに必要な最低人数(1人でも試せる) */
+export const MIN_PLAYERS = 1;
 
 const ROOM_ID = 'main';
 const TABLE = 'hitofude_room';
@@ -46,8 +48,34 @@ export function resolveState(s: RoomState, now: number): RoomState {
 function settle(s: RoomState): RoomState {
   if (s.status !== 'in_game') return s;
   const stillPlaying = s.players.some((p) => p.status === 'playing' && !p.left);
-  const anyFinished = s.players.some((p) => p.status === 'finished');
-  return !stillPlaying && anyFinished ? { ...s, status: 'finished' } : s;
+  return stillPlaying ? s : { ...s, status: 'finished' };
+}
+
+/** ロビーで全員が「準備OK」になったらカウントダウンを始める */
+function maybeStart(s: RoomState, now: number): RoomState {
+  if (s.status !== 'lobby') return s;
+  if (s.players.length < MIN_PLAYERS || !s.players.every((p) => p.status === 'ready')) return s;
+  return {
+    ...s,
+    status: 'countdown',
+    startAt: now + COUNTDOWN_MS,
+    players: s.players.map((p) => ({
+      ...p,
+      status: 'playing' as const,
+      currentQuestion: 1,
+      questionTimes: [],
+      totalTimeMs: undefined,
+      finishTime: undefined,
+      left: false,
+    })),
+  };
+}
+
+/** 管理者がいないので、放置された部屋は次に来た人のときに自動で初期化する */
+export function isRoomStale(s: RoomState, now: number): boolean {
+  if (s.status === 'in_game') return now - s.lastUpdated > 15 * 60 * 1000;
+  if (s.status === 'finished') return now - s.lastUpdated > 5 * 60 * 1000;
+  return false;
 }
 
 const newId = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 11)}`;
@@ -325,9 +353,10 @@ class HitofudeStore {
       questionTimes: [],
       joinedAt: Date.now(),
     };
-    const ok = await this.mutate((s) => {
-      if (s.status !== 'lobby') return null;
-      return { ...s, players: [...s.players, player] }; // キック済みの記録は消さない
+    const ok = await this.mutate((s, now) => {
+      const base = isRoomStale(s, now) ? { ...createInitialState(), spectators: s.spectators } : s;
+      if (base.status !== 'lobby') return null;
+      return { ...base, players: [...base.players, player] };
     });
     return ok ? player : null;
   }
@@ -346,38 +375,15 @@ class HitofudeStore {
     await this.mutate((s) => ({ ...s, spectators: s.spectators.filter((x) => x.id !== id) }));
   }
 
-  public async kickPlayer(playerId: string) {
-    await this.mutate((s) =>
-      settle({
-        ...s,
-        players: s.players.map((p) => (p.id === playerId ? { ...p, status: 'kicked' as const } : p)),
-        kickedPlayerIds: [...new Set([...s.kickedPlayerIds, playerId])],
-      })
-    );
-  }
-
-  public async startGame() {
+  /** ロビーで「準備OK」を押す/取り消す。全員OKになった瞬間にカウントダウン開始 */
+  public async setReady(playerId: string, ready: boolean) {
     await this.mutate((s, now) => {
       if (s.status !== 'lobby') return null;
-      if (!s.players.some((p) => p.status !== 'kicked')) return null;
-      return {
-        ...s,
-        status: 'countdown',
-        startAt: now + COUNTDOWN_MS,
-        players: s.players.map((p) =>
-          p.status === 'kicked'
-            ? p // キック済みは復活させない
-            : {
-                ...p,
-                status: 'playing' as const,
-                currentQuestion: 1,
-                questionTimes: [],
-                totalTimeMs: undefined,
-                finishTime: undefined,
-                left: false,
-              }
-        ),
-      };
+      if (!s.players.some((p) => p.id === playerId)) return null;
+      const players = s.players.map((p) =>
+        p.id === playerId ? { ...p, status: ready ? ('ready' as const) : ('waiting' as const) } : p
+      );
+      return maybeStart({ ...s, players }, now);
     });
   }
 
@@ -405,26 +411,19 @@ class HitofudeStore {
     });
   }
 
-  /** 管理者: 走っている人がいても対戦を終了して順位表を出す */
-  public async forceEnd() {
-    await this.mutate((s) => (s.status === 'in_game' ? { ...s, status: 'finished' } : null));
-  }
-
-  public async resetRoom() {
-    await this.mutate((s) => ({ ...createInitialState(), spectators: s.spectators }));
-  }
-
   /**
-   * ロビーなら名簿から外す。対戦後は記録を残して left にするだけなので、
-   * 完走者が「ロビーへ戻る」を押しても順位表から消えない。
+   * ロビーなら名簿から外す(残りが全員準備OKならそのままスタート)。
+   * 対戦後は記録を残して left にするだけ。全員が抜けたら部屋を初期化する。
    */
   public async leavePlayer(id: string) {
-    await this.mutate((s) => {
-      const me = s.players.find((p) => p.id === id);
-      if (!me) return null;
-      if (me.status === 'kicked') return null; // キックの記録は残す
-      if (s.status === 'lobby') return { ...s, players: s.players.filter((p) => p.id !== id) };
-      return settle({ ...s, players: s.players.map((p) => (p.id === id ? { ...p, left: true } : p)) });
+    await this.mutate((s, now) => {
+      if (!s.players.some((p) => p.id === id)) return null;
+      if (s.status === 'lobby') {
+        return maybeStart({ ...s, players: s.players.filter((p) => p.id !== id) }, now);
+      }
+      const players = s.players.map((p) => (p.id === id ? { ...p, left: true } : p));
+      if (players.every((p) => p.left)) return { ...createInitialState(), spectators: s.spectators };
+      return settle({ ...s, players });
     });
   }
 }

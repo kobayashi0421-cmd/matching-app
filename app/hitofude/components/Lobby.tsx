@@ -7,7 +7,7 @@ interface LobbyProps {
   roomState: RoomState;
   onJoinAsPlayer: (name: string, avatar: string, color: string) => void;
   onJoinAsSpectator: (name: string) => void;
-  onSelectAdmin: () => void;
+  onToggleReady: () => void;
   currentPlayer: Player | null;
   userRole: UserRole;
   onLeave: () => void;
@@ -31,7 +31,7 @@ export const Lobby: React.FC<LobbyProps> = ({
   roomState,
   onJoinAsPlayer,
   onJoinAsSpectator,
-  onSelectAdmin,
+  onToggleReady,
   currentPlayer,
   userRole,
   onLeave,
@@ -44,6 +44,8 @@ export const Lobby: React.FC<LobbyProps> = ({
 
   const activePlayers = roomState.players.filter((p) => p.status !== 'kicked');
   const isKicked = currentPlayer && currentPlayer.status === 'kicked';
+  const iAmReady = currentPlayer?.status === 'ready';
+  const readyCount = activePlayers.filter((p) => p.status === 'ready').length;
 
   return (
     <div className="max-w-4xl mx-auto w-full px-4 py-8">
@@ -150,14 +152,6 @@ export const Lobby: React.FC<LobbyProps> = ({
             </button>
           </div>
 
-          <div className="mt-8 text-center pt-6 border-t border-slate-800/80">
-            <button
-              onClick={onSelectAdmin}
-              className="text-xs font-semibold text-slate-400 hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 border border-transparent hover:border-slate-700"
-            >
-              <span>👑</span> 管理者画面（対戦制御・キック）を開く
-            </button>
-          </div>
         </div>
       ) : (
         /* Real-Time Waiting Lobby for Player */
@@ -193,7 +187,7 @@ export const Lobby: React.FC<LobbyProps> = ({
                         エントリー完了
                       </span>
                     </h3>
-                    <p className="text-xs text-slate-400">管理者がスタートを押すとゲームが始まります</p>
+                    <p className="text-xs text-slate-400">全員が準備OKを押すとゲームが始まります</p>
                   </div>
                 </div>
 
@@ -213,10 +207,23 @@ export const Lobby: React.FC<LobbyProps> = ({
                   ⏳
                 </div>
                 <h4 className="text-2xl font-extrabold text-slate-100 mb-2">待機中 (リアルタイム)</h4>
-                <p className="text-indigo-300 text-sm max-w-md mx-auto">
-                  管理者が対戦をスタートするまでそのままお待ちください。<br />
-                  スタートすると自動で画面が3秒カウントダウンに切り替わります！
+                <p className="text-indigo-300 text-sm max-w-md mx-auto mb-5">
+                  準備ができたら「準備OK」を押してください。<br />
+                  全員が押すと3秒カウントダウンが始まります！
                 </p>
+                <div className="text-sm font-bold text-slate-300 mb-4">
+                  準備OK <span className="text-emerald-400 text-lg">{readyCount}</span> / {activePlayers.length} 人
+                </div>
+                <button
+                  onClick={onToggleReady}
+                  className={`w-full max-w-xs py-3.5 px-6 rounded-2xl font-extrabold text-lg shadow-xl transition-all ${
+                    iAmReady
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600'
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-emerald-600/30'
+                  }`}
+                >
+                  {iAmReady ? '↩️ 準備を取り消す' : '✅ 準備OK！'}
+                </button>
               </div>
 
               {/* Connected Players list */}
@@ -252,8 +259,10 @@ export const Lobby: React.FC<LobbyProps> = ({
                           )}
                         </div>
                         <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                          <span>準備完了</span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${p.status === 'ready' ? 'bg-emerald-400' : 'bg-slate-600'}`}></span>
+                          <span className={p.status === 'ready' ? 'text-emerald-400' : ''}>
+                            {p.status === 'ready' ? '準備OK' : '準備中…'}
+                          </span>
                         </div>
                       </div>
                     </div>

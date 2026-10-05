@@ -43,7 +43,7 @@ export const SpectatorPanel: React.FC<SpectatorPanelProps> = ({ roomState, onExi
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </span>
             <span className="text-sm font-bold text-slate-200">
-              {roomState.status === 'lobby' && '待機室（管理者のスタート待ち）'}
+              {roomState.status === 'lobby' && '待機室（全員の準備OK待ち）'}
               {roomState.status === 'countdown' && 'カウントダウン中...'}
               {roomState.status === 'in_game' && '対戦中（リアルタイム進行中）'}
               {roomState.status === 'finished' && 'レース終了！最終結果発表'}

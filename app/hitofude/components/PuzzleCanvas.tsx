@@ -93,19 +93,20 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   const [questionStartTime] = useState<number>(() => (questionIndex === 1 ? gameStartTime : getNow()));
   const [elapsedMs, setElapsedMs] = useState<number>(() => Math.max(0, getNow() - gameStartTime));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const completeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const durationRef = useRef(0);
+  const [stuck, setStuck] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setElapsedMs(Math.max(0, getNow() - gameStartTime)), 40);
     return () => clearInterval(interval);
   }, [gameStartTime, getNow]);
 
-  useEffect(
-    () => () => {
-      if (completeTimer.current) clearTimeout(completeTimer.current);
-    },
-    []
-  );
+  // 正解したのに3秒たっても次へ進まないときは「次へ進む」ボタンを出す
+  useEffect(() => {
+    if (!isSuccess) return;
+    const t = setTimeout(() => setStuck(true), 3000);
+    return () => clearTimeout(t);
+  }, [isSuccess]);
 
   // エラー表示は1.8秒で自動的に消す
   useEffect(() => {
@@ -165,9 +166,8 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
         setIsSuccess(true);
         playSuccessSound();
         const duration = getNow() - questionStartTime;
-        completeTimer.current = setTimeout(() => {
-          onCompleteQuestion(questionIndex, duration);
-        }, 800);
+        durationRef.current = duration;
+        onCompleteQuestion(questionIndex, duration);
       }
     },
     [currentNodeId, isSuccess, puzzle, tracedEdgeKeys, questionIndex, questionStartTime, getNow, onCompleteQuestion]
@@ -277,6 +277,14 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
               第{questionIndex}問 CLEAR!!
             </h3>
             <p className="text-slate-300 text-sm mt-2">次の問題へ自動で移動します...</p>
+            {stuck && (
+              <button
+                onClick={() => onCompleteQuestion(questionIndex, durationRef.current)}
+                className="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold"
+              >
+                次へ進む
+              </button>
+            )}
           </div>
         )}
 
