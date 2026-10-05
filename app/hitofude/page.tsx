@@ -26,6 +26,8 @@ export default function HitofudeGamePage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [, setTick] = useState(0);
   const restored = useRef(false);
+  const [local, setLocal] = useState<{ start?: number; q: number }>({ q: 1 });
+  const syncChain = useRef<Promise<void>>(Promise.resolve());
 
   // ストアの購読(1回だけ)
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function HitofudeGamePage() {
     try {
       if (next.role) sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       else sessionStorage.removeItem(SESSION_KEY);
-    } catch {}
+    } catch { }
   };
 
   // リロード後の復帰(初回の状態取得が終わってから1回だけ)
@@ -58,7 +60,7 @@ export default function HitofudeGamePage() {
       } else {
         sessionStorage.removeItem(SESSION_KEY);
       }
-    } catch {}
+    } catch { }
   }, [ready, roomState]);
 
   // ルームがリセットされて自分の記録が消えたらロビーに戻す
@@ -114,16 +116,29 @@ export default function HitofudeGamePage() {
     void hitofudeStore.setReady(currentPlayer.id, currentPlayer.status !== 'ready');
   };
 
-  // 保存に失敗しても、進んでいなければ最大4回やり直す
-  const handleCompleteQuestion = async (questionIndex: number, durationMs: number) => {
+  // この端末で解けた問題の番号。サーバー保存を待たず、正解したらすぐ次の問題へ進むために使う
+  const localQ = local.start === state.startAt ? local.q : 1;
+  const displayQ = currentPlayer ? Math.max(currentPlayer.currentQuestion, localQ) : 1;
+  const doneLocally = displayQ > 5;
+
+  const handleCompleteQuestion = (questionIndex: number, durationMs: number) => {
     if (!currentPlayer) return;
     const id = currentPlayer.id;
-    for (let i = 0; i < 4; i++) {
-      await hitofudeStore.recordQuestionCompletion(id, questionIndex, durationMs);
-      const me = hitofudeStore.getState().players.find((p) => p.id === id);
-      if (!me || me.status !== 'playing' || me.currentQuestion !== questionIndex) return;
-      await new Promise((r) => setTimeout(r, 600));
-    }
+    const start = state.startAt;
+    // 1. 画面はすぐ次の問題へ(第5問なら結果画面へ)
+    setLocal((prev) => {
+      const base = prev.start === start ? prev.q : 1;
+      return { start, q: Math.max(base, questionIndex + 1) };
+    });
+    // 2. 保存は裏で、問題の順番どおりに。失敗したら最大4回やり直す
+    syncChain.current = syncChain.current.then(async () => {
+      for (let i = 0; i < 4; i++) {
+        await hitofudeStore.recordQuestionCompletion(id, questionIndex, durationMs);
+        const me = hitofudeStore.getState().players.find((p) => p.id === id);
+        if (!me || me.status !== 'playing' || me.currentQuestion !== questionIndex) return;
+        await new Promise((r) => setTimeout(r, 600));
+      }
+    });
   };
 
   const remainingSec = Math.max(1, Math.ceil(((state.startAt ?? 0) - hitofudeStore.serverNow()) / 1000));
@@ -193,13 +208,13 @@ export default function HitofudeGamePage() {
             )}
 
             {currentPlayer.status !== 'kicked' && state.status === 'in_game' &&
-              (currentPlayer.status === 'finished' ? (
+              (currentPlayer.status === 'finished' || doneLocally ? (
                 <Leaderboard roomState={state} onBackToLobby={handleLeave} />
               ) : (
                 <PuzzleCanvas
-                  key={currentPlayer.currentQuestion}
-                  puzzle={PUZZLES[Math.min(currentPlayer.currentQuestion - 1, PUZZLES.length - 1)]}
-                  questionIndex={currentPlayer.currentQuestion}
+                  key={displayQ}
+                  puzzle={PUZZLES[Math.min(displayQ - 1, PUZZLES.length - 1)]}
+                  questionIndex={displayQ}
                   gameStartTime={state.startAt ?? hitofudeStore.serverNow()}
                   getNow={hitofudeStore.serverNow}
                   onCompleteQuestion={handleCompleteQuestion}

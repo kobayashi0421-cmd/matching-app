@@ -19,8 +19,6 @@ export default function CalendarCreatePage() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [rangeStart, setRangeStart] = useState('');
-  const [rangeEnd, setRangeEnd] = useState('');
 
   const today = fmt(new Date());
 
@@ -39,23 +37,6 @@ export default function CalendarCreatePage() {
     const next = new Set(selected);
     next.has(d) ? next.delete(d) : next.add(d);
     setSelected(next);
-  };
-  const addRange = () => {
-    if (!rangeStart || !rangeEnd) return setError('開始日と終了日を選んでください');
-    if (rangeStart > rangeEnd) return setError('終了日は開始日以降にしてください');
-    const next = new Set(selected);
-    const start = new Date(rangeStart + 'T00:00:00');
-    const end = new Date(rangeEnd + 'T00:00:00');
-    const cur = new Date(start);
-    let guard = 0;
-    while (cur <= end && guard++ < 366) {
-      const s = fmt(cur);
-      if (s >= today) next.add(s); // 過去日は除外
-      cur.setDate(cur.getDate() + 1);
-    }
-    setSelected(next);
-    setMonth(new Date(start.getFullYear(), start.getMonth(), 1)); // 開始月にカレンダーを移動
-    setError('');
   };
 
   const create = async () => {
@@ -98,7 +79,7 @@ export default function CalendarCreatePage() {
           <div className="font-bold">{month.getFullYear()}年 {month.getMonth() + 1}月</div>
           <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="px-3 py-1 rounded-lg hover:bg-gray-100">→</button>
         </div>
-        <div className="grid grid-cols-7 text-center text-xs text-gray-900 mb-1">
+        <div className="grid grid-cols-7 text-center text-xs text-gray-400 mb-1">
           {['日', '月', '火', '水', '木', '金', '土'].map((w) => <div key={w}>{w}</div>)}
         </div>
         <div className="grid grid-cols-7 gap-1">
@@ -114,45 +95,13 @@ export default function CalendarCreatePage() {
                   ? 'bg-indigo-600 text-white font-bold'
                   : d < today
                     ? 'text-gray-300'
-                    : 'text-gray-900 hover:bg-indigo-50'
+                    : 'hover:bg-indigo-50'
                   }`}
               >
                 {Number(d.slice(8))}
               </button>
             )
           )}
-        </div>
-      </div>
-      <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm text-gray-900">
-        <h2 className="font-bold text-sm mb-3">期間でまとめて追加</h2>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={rangeStart}
-            min={today}
-            onChange={(e) => {
-              const v = e.target.value;
-              setRangeStart(v);
-              if (!rangeEnd || rangeEnd < v) setRangeEnd(v); // 終了日を自動で合わせる
-            }}
-            className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-300 text-sm"
-          />
-          <span className="text-sm">〜</span>
-          <input
-            type="date"
-            value={rangeEnd}
-            min={rangeStart || today}
-            onChange={(e) => setRangeEnd(e.target.value)}
-            className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-300 text-sm"
-          />
-        </div>
-        <div className="flex gap-2 mt-3">
-          <button onClick={addRange} className="flex-1 py-2 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm hover:bg-indigo-200">
-            この期間を追加
-          </button>
-          <button onClick={() => setSelected(new Set())} className="px-4 py-2 rounded-lg border border-gray-300 text-sm hover:bg-gray-50">
-            全部クリア
-          </button>
         </div>
       </div>
 
