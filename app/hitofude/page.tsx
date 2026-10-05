@@ -42,7 +42,7 @@ export default function HitofudeGamePage() {
     try {
       if (next.role) sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       else sessionStorage.removeItem(SESSION_KEY);
-    } catch { }
+    } catch {}
   };
 
   // リロード後の復帰(初回の状態取得が終わってから1回だけ)
@@ -60,7 +60,7 @@ export default function HitofudeGamePage() {
       } else {
         sessionStorage.removeItem(SESSION_KEY);
       }
-    } catch { }
+    } catch {}
   }, [ready, roomState]);
 
   // ルームがリセットされて自分の記録が消えたらロビーに戻す
@@ -203,7 +203,7 @@ export default function HitofudeGamePage() {
                   {remainingSec}
                 </div>
                 <h2 className="text-3xl font-extrabold text-slate-100">準備してください！</h2>
-                <p className="text-indigo-300 text-sm mt-2">全5問の一筆書きパズルが始まります！</p>
+                <p className="text-indigo-300 text-sm mt-2">全5問の数字つなぎが始まります！</p>
               </div>
             )}
 

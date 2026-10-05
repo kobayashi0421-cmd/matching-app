@@ -51,8 +51,10 @@ export interface Puzzle {
   subtitle: string;
   difficulty: '★☆☆☆☆' | '★★☆☆☆' | '★★★☆☆' | '★★★★☆' | '★★★★★';
   viewBox: string;
+  /** 番号順に並べた頂点。1番目が「1」、2番目が「2」… */
   nodes: Node[];
-  edges: Edge[];
+  /** true なら、最後まで押したあと1番に戻る線を引く */
+  closed?: boolean;
   hint?: string;
 }
 
