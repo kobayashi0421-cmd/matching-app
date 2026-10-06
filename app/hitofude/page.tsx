@@ -10,6 +10,7 @@ import { Lobby } from './components/Lobby';
 import { SpectatorPanel } from './components/SpectatorPanel';
 import { PuzzleCanvas } from './components/PuzzleCanvas';
 import { Leaderboard } from './components/Leaderboard';
+import { HelpModal } from './components/HelpModal';
 
 const SESSION_KEY = 'hitofude_session_v1';
 
@@ -24,6 +25,7 @@ export default function HitofudeGamePage() {
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState<Session>({ role: null });
   const [notice, setNotice] = useState<string | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [, setTick] = useState(0);
   const restored = useRef(false);
   const [local, setLocal] = useState<{ start?: number; q: number }>({ q: 1 });
@@ -42,7 +44,7 @@ export default function HitofudeGamePage() {
     try {
       if (next.role) sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       else sessionStorage.removeItem(SESSION_KEY);
-    } catch {}
+    } catch { }
   };
 
   // リロード後の復帰(初回の状態取得が終わってから1回だけ)
@@ -60,7 +62,7 @@ export default function HitofudeGamePage() {
       } else {
         sessionStorage.removeItem(SESSION_KEY);
       }
-    } catch {}
+    } catch { }
   }, [ready, roomState]);
 
   // ルームがリセットされて自分の記録が消えたらロビーに戻す
@@ -152,13 +154,6 @@ export default function HitofudeGamePage() {
       <header className="w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-1.5"
-            >
-              <span>←</span> アプリホームへ
-            </Link>
-            <span className="text-slate-700">|</span>
             <div className="flex items-center gap-2">
               <span className="text-xl">✍️</span>
               <span className="font-extrabold text-slate-100 text-base tracking-tight hidden sm:inline">
@@ -167,16 +162,25 @@ export default function HitofudeGamePage() {
             </div>
           </div>
 
-          {session.role && (
-            <div className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 border bg-slate-900 border-slate-800">
-              {session.role === 'spectator' && <span className="text-indigo-400">👁️ 観戦モード</span>}
-              {session.role === 'player' && (
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <span>🎮</span> {currentPlayer?.name || 'プレイヤー'}
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setHelpOpen(true)}
+              aria-label="ヘルプを開く"
+              className="text-xs font-bold text-sky-300 hover:text-sky-200 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/30"
+            >
+              ❓ ヘルプ
+            </button>
+            {session.role && (
+              <div className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 border bg-slate-900 border-slate-800">
+                {session.role === 'spectator' && <span className="text-indigo-400">👁️ 観戦モード</span>}
+                {session.role === 'player' && (
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <span>🎮</span> {currentPlayer?.name || 'プレイヤー'}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -241,6 +245,8 @@ export default function HitofudeGamePage() {
       <footer className="w-full border-t border-slate-900 bg-slate-950 text-slate-500 text-xs py-4 text-center">
         一筆書き競争ゲーム • Real-time Multiplayer One-Stroke Puzzle Race
       </footer>
+
+      {helpOpen && <HelpModal kind="game" onClose={() => setHelpOpen(false)} />}
     </div>
   );
 }

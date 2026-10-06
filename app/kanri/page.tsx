@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { RoomState } from '../hitofude/types';
 import { hitofudeStore, resolveState } from '../hitofude/store';
 import { formatDuration } from '../hitofude/format';
+import { HelpModal } from '../hitofude/components/HelpModal';
 
 /** 任意: .env に NEXT_PUBLIC_KANRI_PASS を入れると合言葉が必要になる(簡易ロックなので本格的な防御ではありません) */
 const PASS = process.env.NEXT_PUBLIC_KANRI_PASS;
@@ -22,6 +23,7 @@ export default function KanriPage() {
   const [, setTick] = useState(0);
   const [authed, setAuthed] = useState(!PASS);
   const [input, setInput] = useState('');
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => hitofudeStore.subscribe((s) => setRoomState(s)), []);
   // カウントダウン→対戦中の切り替わりを表示に反映
@@ -66,12 +68,15 @@ export default function KanriPage() {
       <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <span className="font-extrabold text-amber-300">👑 一筆書き競争 管理画面</span>
-          <Link
-            href="/hitofude"
-            className="text-xs font-bold text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800"
-          >
-            ゲーム画面へ →
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setHelpOpen(true)}
+              aria-label="ヘルプを開く"
+              className="text-xs font-bold text-sky-300 hover:text-sky-200 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/30"
+            >
+              ❓ ヘルプ
+            </button>
+          </div>
         </div>
       </header>
 
@@ -185,6 +190,8 @@ export default function KanriPage() {
           )}
         </div>
       </main>
+
+      {helpOpen && <HelpModal kind="admin" onClose={() => setHelpOpen(false)} />}
     </div>
   );
 }
