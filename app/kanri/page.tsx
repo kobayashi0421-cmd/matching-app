@@ -2,14 +2,16 @@
 
 import '../hitofude/hitofude.css';
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { RoomState } from '../hitofude/types';
 import { hitofudeStore, resolveState } from '../hitofude/store';
 import { formatDuration } from '../hitofude/format';
 import { HelpModal } from '../hitofude/components/HelpModal';
 
-/** 任意: .env に NEXT_PUBLIC_KANRI_PASS を入れると合言葉が必要になる(簡易ロックなので本格的な防御ではありません) */
-const PASS = process.env.NEXT_PUBLIC_KANRI_PASS;
+/** 合言葉。.env に NEXT_PUBLIC_KANRI_PASS があればそちらを優先する(どちらも簡易ロックで、本格的な防御ではありません) */
+const PASS = process.env.NEXT_PUBLIC_KANRI_PASS ?? 'さいとうけんじ';
+const UNLOCK_KEY = 'kanri_unlocked_v1';
+/** 全角/半角・空白の違いは同じ扱いにする */
+const normalize = (s: string) => s.normalize('NFKC').replace(/\s/g, '');
 
 const STATUS_LABEL: Record<RoomState['status'], string> = {
   lobby: '⏳ 待機中',
@@ -21,8 +23,11 @@ const STATUS_LABEL: Record<RoomState['status'], string> = {
 export default function KanriPage() {
   const [roomState, setRoomState] = useState<RoomState>(hitofudeStore.getState());
   const [, setTick] = useState(0);
-  const [authed, setAuthed] = useState(!PASS);
+  const [authed, setAuthed] = useState(false);
+  const [checked, setChecked] = useState(false); // ロック状態の確認が済んだか
   const [input, setInput] = useState('');
+  const [wrong, setWrong] = useState(false);
+  const [showInput, setShowInput] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => hitofudeStore.subscribe((s) => setRoomState(s)), []);
@@ -32,24 +37,82 @@ export default function KanriPage() {
     return () => clearInterval(id);
   }, []);
 
+  // 同じタブの中では、一度解除したらリロードしても開いたままにする
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(UNLOCK_KEY) === '1') setAuthed(true);
+    } catch { }
+    setChecked(true);
+  }, []);
+
   const state = resolveState(roomState, hitofudeStore.serverNow());
   const players = state.players.filter((p) => p.status !== 'kicked');
   const kicked = state.players.filter((p) => p.status === 'kicked');
 
+  const tryUnlock = () => {
+    if (normalize(input) === normalize(PASS)) {
+      try {
+        sessionStorage.setItem(UNLOCK_KEY, '1');
+      } catch { }
+      setWrong(false);
+      setInput('');
+      setAuthed(true);
+    } else {
+      setWrong(true);
+      setInput('');
+    }
+  };
+
+  const lock = () => {
+    try {
+      sessionStorage.removeItem(UNLOCK_KEY);
+    } catch { }
+    setAuthed(false);
+  };
+
+  if (!checked) return <div className="hf-root min-h-screen bg-slate-950" />;
+
   if (!authed) {
     return (
       <div className="hf-root min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-8 w-full max-w-sm">
-          <h1 className="text-xl font-extrabold mb-4">👑 管理画面</h1>
-          <input
-            type="password"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="合言葉"
-            className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl mb-4 text-slate-100"
-          />
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-8 w-full max-w-sm text-center">
+          <div className="text-5xl mb-3">🔒</div>
+          <h1 className="text-xl font-extrabold mb-1">管理画面</h1>
+          <p className="text-sm text-slate-400 mb-5">合言葉を入力してください</p>
+
+          <div className="relative mb-3">
+            {/* 日本語入力ができるよう type="password" は使わず、見た目だけ伏せ字にしている */}
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setWrong(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.nativeEvent.isComposing) tryUnlock();
+              }}
+              placeholder="合言葉"
+              autoComplete="off"
+              autoFocus
+              style={showInput ? undefined : ({ WebkitTextSecurity: 'disc' } as React.CSSProperties)}
+              className={`w-full pl-4 pr-14 py-3 bg-slate-950 border rounded-xl text-slate-100 ${wrong ? 'border-rose-500' : 'border-slate-700'
+                }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowInput((v) => !v)}
+              aria-label={showInput ? '合言葉を隠す' : '合言葉を表示する'}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-200 px-2 py-1"
+            >
+              {showInput ? '隠す' : '表示'}
+            </button>
+          </div>
+
+          {wrong && <p className="text-rose-400 text-sm font-bold mb-3">合言葉がちがいます</p>}
+
           <button
-            onClick={() => input === PASS && setAuthed(true)}
+            onClick={tryUnlock}
             className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold"
           >
             入る
@@ -75,6 +138,12 @@ export default function KanriPage() {
               className="text-xs font-bold text-sky-300 hover:text-sky-200 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/30"
             >
               ❓ ヘルプ
+            </button>
+            <button
+              onClick={lock}
+              className="text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700"
+            >
+              🔒 ロックする
             </button>
           </div>
         </div>
