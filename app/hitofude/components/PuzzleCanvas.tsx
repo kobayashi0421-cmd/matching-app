@@ -218,7 +218,7 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
 
         <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
           <div>
-            <h2 className="text-xl md:text-2xl font-bold text-slate-100">{puzzle.title}</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-100">第{questionIndex}問: {puzzle.title}</h2>
             <p className="text-slate-400 text-xs mt-0.5">{puzzle.subtitle}</p>
           </div>
           {puzzle.hint && (

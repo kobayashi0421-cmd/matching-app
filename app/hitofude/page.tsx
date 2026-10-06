@@ -4,7 +4,7 @@ import './hitofude.css';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { RoomState } from './types';
-import { PUZZLES } from './puzzles';
+import { getPuzzle } from './puzzles';
 import { hitofudeStore, resolveState, isRoomStale } from './store';
 import { Lobby } from './components/Lobby';
 import { SpectatorPanel } from './components/SpectatorPanel';
@@ -213,7 +213,7 @@ export default function HitofudeGamePage() {
               ) : (
                 <PuzzleCanvas
                   key={displayQ}
-                  puzzle={PUZZLES[Math.min(displayQ - 1, PUZZLES.length - 1)]}
+                  puzzle={getPuzzle(state.puzzleIds, displayQ)}
                   questionIndex={displayQ}
                   gameStartTime={state.startAt ?? hitofudeStore.serverNow()}
                   getNow={hitofudeStore.serverNow}

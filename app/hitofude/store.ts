@@ -2,6 +2,7 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { RoomState, Player, Spectator } from './types';
+import { pickPuzzleIds } from './puzzles';
 
 export const COUNTDOWN_MS = 3000;
 /** 全員が準備OKでスタートするのに必要な最低人数(1人でも試せる) */
@@ -24,6 +25,11 @@ export function createInitialState(): RoomState {
     kickedPlayerIds: [],
     lastUpdated: 0,
   };
+}
+
+/** ルームを初期化する。観戦者と「前回の問題」は引き継ぐ(再挑戦で別の問題にするため) */
+function freshState(s: RoomState): RoomState {
+  return { ...createInitialState(), spectators: s.spectators, prevPuzzleIds: s.puzzleIds ?? s.prevPuzzleIds };
 }
 
 function normalize(raw: unknown): RoomState {
@@ -60,6 +66,7 @@ function maybeStart(s: RoomState, now: number): RoomState {
     ...s,
     status: 'countdown',
     startAt: now + COUNTDOWN_MS,
+    puzzleIds: pickPuzzleIds(s.prevPuzzleIds),
     players: s.players.map((p) =>
       p.status === 'kicked'
         ? p // 強制退出した人は復活させない
@@ -359,7 +366,7 @@ class HitofudeStore {
       joinedAt: Date.now(),
     };
     const ok = await this.mutate((s, now) => {
-      const base = isRoomStale(s, now) ? { ...createInitialState(), spectators: s.spectators } : s;
+      const base = isRoomStale(s, now) ? freshState(s) : s;
       if (base.status !== 'lobby') return null;
       return { ...base, players: [...base.players, player] };
     });
@@ -401,7 +408,7 @@ class HitofudeStore {
   }
 
   public async resetRoom() {
-    await this.mutate((s) => ({ ...createInitialState(), spectators: s.spectators }));
+    await this.mutate((s) => (freshState(s)));
   }
 
   /** ロビーで「準備OK」を押す/取り消す。全員OKになった瞬間にカウントダウン開始 */
@@ -451,7 +458,7 @@ class HitofudeStore {
         return maybeStart({ ...s, players: s.players.filter((p) => p.id !== id) }, now);
       }
       const players = s.players.map((p) => (p.id === id ? { ...p, left: true } : p));
-      if (players.every((p) => p.left || p.status === 'kicked')) return { ...createInitialState(), spectators: s.spectators };
+      if (players.every((p) => p.left || p.status === 'kicked')) return freshState(s);
       return settle({ ...s, players });
     });
   }

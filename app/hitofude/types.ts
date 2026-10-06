@@ -30,6 +30,10 @@ export interface RoomState {
   spectators: Spectator[];
   kickedPlayerIds: string[];
   lastUpdated: number;
+  /** 今回の対戦で使う問題のID(第1〜5問の順)。スタート時に決まる */
+  puzzleIds?: number[];
+  /** 前回の対戦の問題ID。再挑戦で同じ問題を避けるために残す */
+  prevPuzzleIds?: number[];
 }
 
 export interface Node {
@@ -48,7 +52,8 @@ export interface Edge {
 }
 
 export interface Puzzle {
-  id: number; // 1 to 5
+  id: number; // 問題プール内の通し番号(1〜20)
+  tier: number; // 難易度の段階(1〜5)。第N問は段階Nから出る
   title: string;
   subtitle: string;
   difficulty: '★☆☆☆☆' | '★★☆☆☆' | '★★★☆☆' | '★★★★☆' | '★★★★★';
