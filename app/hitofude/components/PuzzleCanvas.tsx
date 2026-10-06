@@ -75,6 +75,55 @@ const playSuccessSound = () => {
   });
 };
 
+/** 目の錯覚用の背景(クリックには影響しない) */
+const IllusionLayer: React.FC<{ kind?: Puzzle['illusion'] }> = ({ kind }) => {
+  if (kind === 'radial') {
+    // 放射状の線: まっすぐな線が曲がって見える(ヘリング錯視)
+    return (
+      <g pointerEvents="none" stroke="#64748b" strokeWidth="1.3" opacity="0.55">
+        {Array.from({ length: 36 }, (_, i) => {
+          const a = (i * 10 * Math.PI) / 180;
+          return <line key={i} x1="150" y1="150" x2={150 + 260 * Math.cos(a)} y2={150 + 260 * Math.sin(a)} />;
+        })}
+      </g>
+    );
+  }
+  if (kind === 'rings') {
+    // 同心円: 丸の大きさや位置の感覚がずれる
+    return (
+      <g pointerEvents="none" fill="none" stroke="#64748b" opacity="0.55">
+        {Array.from({ length: 15 }, (_, i) => (
+          <circle key={i} cx="150" cy="150" r={15 + i * 15} strokeWidth={i % 2 === 0 ? 2.2 : 1} />
+        ))}
+      </g>
+    );
+  }
+  if (kind === 'cafe') {
+    // カフェウォール錯視: 平行な目地が斜めに見える
+    const T = 30;
+    return (
+      <g pointerEvents="none">
+        {Array.from({ length: 10 }, (_, r) =>
+          Array.from({ length: 12 }, (_, c) => (
+            <rect
+              key={`${r}-${c}`}
+              x={c * T - (r % 2) * (T / 2)}
+              y={r * T}
+              width={T}
+              height={T - 2}
+              fill={c % 2 === 0 ? '#050a14' : '#2b3a52'}
+            />
+          ))
+        )}
+        {Array.from({ length: 10 }, (_, r) => (
+          <line key={`m${r}`} x1="0" x2="300" y1={r * T + T - 1} y2={r * T + T - 1} stroke="#7b8aa3" strokeWidth="2" />
+        ))}
+      </g>
+    );
+  }
+  return null;
+};
+
 /** 数字つなぎ: 1番から順番にタップして、最後の番号まで押せたら正解 */
 export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
   puzzle,
@@ -217,13 +266,22 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
         <div className="w-full max-w-lg aspect-square bg-slate-950/90 rounded-2xl border border-slate-800 p-4 relative shadow-inner overflow-hidden flex items-center justify-center">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-20 pointer-events-none" />
 
-          <svg viewBox={puzzle.viewBox} className="w-full h-full touch-none select-none z-10">
+          <svg viewBox={puzzle.viewBox} className={`w-full h-full touch-none select-none z-10${puzzle.wobble ? ' hf-wobble' : ''}`}>
             <defs>
               <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                 <feGaussianBlur stdDeviation="3" result="blur" />
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
             </defs>
+
+            <IllusionLayer kind={puzzle.illusion} />
+
+            {/* ニセの丸(数字なし・タップしても何も起きない) */}
+            {puzzle.decoys?.map((d, i) => (
+              <g key={`d${i}`} className="hf-node" pointerEvents="none">
+                <circle cx={d.x} cy={d.y} r={d.r} fill="#1e293b" stroke="#64748b" strokeWidth="3" className="hf-node-body" />
+              </g>
+            ))}
 
             {/* 完成したら絵の中を薄く塗る */}
             {isSuccess && puzzle.closed && (
@@ -256,12 +314,12 @@ export const PuzzleCanvas: React.FC<PuzzleCanvasProps> = ({
               return (
                 <g key={node.id} onClick={() => handleNodeClick(i)} className="hf-node">
                   {isCurrent && !isSuccess && (
-                    <circle cx={node.x} cy={node.y} r="22" fill="none" stroke="#f59e0b" strokeWidth="3" className="hf-ring" />
+                    <circle cx={node.x} cy={node.y} r={(node.r ?? 14) + 8} fill="none" stroke="#f59e0b" strokeWidth="3" className="hf-ring" />
                   )}
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={isCurrent ? '16' : '14'}
+                    r={isCurrent ? (node.r ?? 14) + 2 : node.r ?? 14}
                     fill={isCurrent ? '#f59e0b' : isVisited ? '#3b82f6' : '#1e293b'}
                     stroke={isCurrent ? '#fef08a' : isVisited ? '#60a5fa' : '#64748b'}
                     strokeWidth="3"

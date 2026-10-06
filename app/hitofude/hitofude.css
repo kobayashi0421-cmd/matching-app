@@ -26,58 +26,34 @@
   transition: transform 0.15s var(--hf-ease), background-color 0.2s, border-color 0.2s,
     box-shadow 0.2s, opacity 0.2s;
 }
-
 .hf-root button:disabled {
   cursor: not-allowed;
 }
-
 .hf-root button:focus-visible,
 .hf-root input:focus-visible,
 .hf-root a:focus-visible {
   outline: 2px solid #818cf8;
   outline-offset: 2px;
 }
-
 .hf-root input[type='text'] {
-  font-size: 16px;
-  /* iOSのフォーカス時ズーム防止 */
+  font-size: 16px; /* iOSのフォーカス時ズーム防止 */
 }
 
 /* ---------- スクロールバー ---------- */
-.hf-root ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.hf-root ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 999px;
-}
-
-.hf-root ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
+.hf-root ::-webkit-scrollbar { width: 8px; height: 8px; }
+.hf-root ::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
+.hf-root ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
 /* ---------- 登場アニメ ---------- */
 @keyframes hf-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }
-
-.hf-root .animate-fade-in {
-  /* PuzzleCanvasで使われているが未定義だったもの */
+.hf-root .animate-fade-in {   /* PuzzleCanvasで使われているが未定義だったもの */
   animation: hf-fade-in 0.35s var(--hf-ease) both;
 }
-
-.hf-root>main>div,
-.hf-root>main>div>div {
+.hf-root > main > div,
+.hf-root > main > div > div {
   animation: hf-fade-in 0.4s var(--hf-ease) both;
 }
 
@@ -89,42 +65,23 @@
 }
 
 /* SVGのscale/pingは原点(0,0)基準になり、円が左上へ飛ぶバグの修正 */
-.hf-node {
-  cursor: pointer;
-  outline: none;
-}
-
+.hf-node { cursor: pointer; outline: none; }
 .hf-node circle,
 .hf-node text {
   transform-box: fill-box;
   transform-origin: center;
 }
-
 .hf-node-body {
   transition: transform 0.2s var(--hf-ease), fill 0.2s, stroke 0.2s;
 }
-
-.hf-node:hover .hf-node-body {
-  transform: scale(1.2);
-}
-
-.hf-node:active .hf-node-body {
-  transform: scale(0.95);
-}
+.hf-node:hover .hf-node-body  { transform: scale(1.2); }
+.hf-node:active .hf-node-body { transform: scale(0.95); }
 
 /* 現在地のパルスリング */
 @keyframes hf-ring {
-  0% {
-    transform: scale(0.7);
-    opacity: 0.9;
-  }
-
-  100% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
-
 .hf-ring {
   transform-box: fill-box;
   transform-origin: center;
@@ -133,15 +90,9 @@
 
 /* なぞった線が引かれるアニメ */
 @keyframes hf-draw {
-  from {
-    stroke-dashoffset: 400;
-  }
-
-  to {
-    stroke-dashoffset: 0;
-  }
+  from { stroke-dashoffset: 400; }
+  to   { stroke-dashoffset: 0; }
 }
-
 .hf-line-traced {
   stroke-dasharray: 400;
   animation: hf-draw 0.35s ease-out forwards;
@@ -154,20 +105,12 @@
 }
 
 /* ---------- スマホの安全領域 ---------- */
-.hf-root>header {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-.hf-root>footer {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
-}
+.hf-root > header { padding-top: env(safe-area-inset-top, 0px); }
+.hf-root > footer { padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
 
 /* ---------- 動きを減らす設定の人向け ---------- */
 @media (prefers-reduced-motion: reduce) {
-
-  .hf-root *,
-  .hf-root *::before,
-  .hf-root *::after {
+  .hf-root *, .hf-root *::before, .hf-root *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -180,34 +123,13 @@
    ========================================================== */
 
 /* --- 小さい文字を大きく・薄い文字を明るく --- */
-.hf-root .text-xs {
-  font-size: 0.82rem;
-  line-height: 1.25rem;
-}
-
-.hf-root .text-\[11px\] {
-  font-size: 12.5px;
-}
-
-.hf-root .text-\[10px\] {
-  font-size: 11.5px;
-}
-
-.hf-root .text-slate-400 {
-  color: #cbd5e1;
-}
-
-.hf-root .text-slate-500 {
-  color: #a8b5c8;
-}
-
-.hf-root .text-slate-600 {
-  color: #8b9ab0;
-}
-
-.hf-root .border-slate-800 {
-  border-color: #475569;
-}
+.hf-root .text-xs { font-size: 0.82rem; line-height: 1.25rem; }
+.hf-root .text-\[11px\] { font-size: 12.5px; }
+.hf-root .text-\[10px\] { font-size: 11.5px; }
+.hf-root .text-slate-400 { color: #cbd5e1; }
+.hf-root .text-slate-500 { color: #a8b5c8; }
+.hf-root .text-slate-600 { color: #8b9ab0; }
+.hf-root .border-slate-800 { border-color: #475569; }
 
 /* --- パズル盤面 --- */
 /* まだなぞっていない線: 暗い灰色 → くっきり明るい線に */
@@ -216,7 +138,6 @@
   stroke-width: 4px;
   stroke-dasharray: 9 7;
 }
-
 /* なぞった線: 太く明るく */
 .hf-root svg .hf-line-traced {
   stroke: #38bdf8;
@@ -224,36 +145,21 @@
 }
 
 /* まる(頂点): 大きく、白い縁で目立たせる */
-.hf-root .hf-node-body {
-  transform: scale(1.35);
-}
-
-.hf-root .hf-node:hover .hf-node-body {
-  transform: scale(1.55);
-}
-
-.hf-root .hf-node:active .hf-node-body {
-  transform: scale(1.2);
-}
-
-.hf-root svg circle[fill='#1e293b'] {
-  /* 未訪問 */
+.hf-root .hf-node-body { transform: scale(1.35); }
+.hf-root .hf-node:hover .hf-node-body { transform: scale(1.55); }
+.hf-root .hf-node:active .hf-node-body { transform: scale(1.2); }
+.hf-root svg circle[fill='#1e293b'] {   /* 未訪問 */
   fill: #0f172a;
   stroke: #f1f5f9;
   stroke-width: 3.5px;
 }
-
-.hf-root svg circle[fill='#3b82f6'] {
-  /* 通過済み */
+.hf-root svg circle[fill='#3b82f6'] {   /* 通過済み */
   stroke: #dbeafe;
 }
-
-.hf-root svg circle[fill='#f59e0b'] {
-  /* 現在地 */
+.hf-root svg circle[fill='#f59e0b'] {   /* 現在地 */
   stroke: #ffffff;
   stroke-width: 4px;
 }
-
 .hf-root .hf-node text {
   font-size: 14px;
   font-weight: 800;
@@ -261,14 +167,17 @@
   stroke: #0f172a;
   stroke-width: 2px;
 }
-
-.hf-root .hf-node text[fill='#94a3b8'] {
-  fill: #ffffff;
-}
-
-/* 未訪問の番号を白に */
+.hf-root .hf-node text[fill='#94a3b8'] { fill: #ffffff; }  /* 未訪問の番号を白に */
 
 /* 盤面の背景グリッドを少し見えるように */
-.hf-root .opacity-20.bg-\[size\:2rem_2rem\] {
-  opacity: 0.35;
+.hf-root .opacity-20.bg-\[size\:2rem_2rem\] { opacity: 0.35; }
+
+
+/* ---------- 難しい問題用: 盤面がゆらゆらゆれる ---------- */
+@keyframes hf-wobble {
+  from { transform: rotate(-3.5deg); }
+  to   { transform: rotate(3.5deg); }
+}
+.hf-root svg.hf-wobble {
+  animation: hf-wobble 6s ease-in-out infinite alternate;
 }
