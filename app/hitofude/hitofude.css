@@ -1,60 +1,63 @@
 /* ==========================================================
-   一筆書き競争 — 仕上げ用CSS(リライト版)
+   一筆書き競争 — 全面リライト版CSS
    すべて .hf-root の内側に限定。他ページには影響しません。
+   Tailwind v3 / v4 どちらでも効くよう、クラスを直接上書きしています。
 
-   色を変えたいときは、まず下の「デザイントークン」だけ触ればOK。
+   色を変えたいときは「デザイントークン」だけ触ればOK。
    ========================================================== */
 
 .hf-root {
   /* ---------- デザイントークン ---------- */
+  /* 面(奥 → 手前) */
+  --hf-bg: #0a0f1e;
+  /* ページ背景 */
+  --hf-surface: #121a30;
+  /* カード */
+  --hf-surface-2: #1b2644;
+  /* ボタン・入力欄の下地 */
+  --hf-surface-3: #27345c;
+  /* hover */
+  --hf-border: #2f3d63;
+  --hf-border-hi: #44558a;
+
   /* 文字 */
   --hf-text: #eef2fb;
-  /* 本文・見出し */
-  --hf-text-sub: #b4bfd6;
-  /* 補足 */
+  --hf-text-sub: #b8c3da;
   --hf-text-mute: #8f9dba;
-  /* 注釈・ラベル */
 
   /* アクセント */
   --hf-accent: #818cf8;
-  /* インディゴ: フォーカス・強調 */
-  --hf-line: #22d3ee;
-  /* なぞった線(シアン) */
-  --hf-visited: #6366f1;
-  /* 通過済みの丸 */
-  --hf-visited-rim: #c7d2fe;
-  --hf-current: #fbbf24;
-  /* 現在地(アンバー) */
-  --hf-current-rim: #fffbeb;
+  --hf-cyan: #22d3ee;
+  --hf-cyan-deep: #0891b2;
+  --hf-indigo: #4f46e5;
+  --hf-violet: #8b5cf6;
 
   /* パズル盤面 */
-  --hf-node-bg: #0b1022;
-  /* 未訪問の丸の中身 */
+  --hf-line: #22d3ee;
+  --hf-visited: #6366f1;
+  --hf-visited-rim: #c7d2fe;
+  --hf-current: #fbbf24;
+  --hf-current-rim: #fffbeb;
+  --hf-node-bg: #0a0f1e;
   --hf-node-rim: #e8ecf6;
-  /* 未訪問の丸のふち */
   --hf-node-text: #ffffff;
-  --hf-ink: #0b1022;
-  /* 文字の縁取り */
+  --hf-ink: #0a0f1e;
   --hf-guide: #7a89a8;
-  /* 背景の錯覚ガイド線 */
 
   --hf-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* ---------- Tailwind v4 用: slate を紺寄りの色に差し替え ----------
-     このブロックは .hf-root の中のTailwindクラス(bg-slate-900 や
-     border-slate-800/50 など透明度つきも)の色をまとめて変えます。
-     ※ Tailwind v3 の場合は効きません(下の個別上書きだけ効きます) */
+  /* Tailwind v4 用: slate 全体も同じ色味に */
   --color-slate-50: #f4f6fb;
   --color-slate-100: #eef2fb;
   --color-slate-200: #d9e0ef;
-  --color-slate-300: #b4bfd6;
-  --color-slate-400: #9aa8c4;
+  --color-slate-300: #b8c3da;
+  --color-slate-400: #9ba9c5;
   --color-slate-500: #8392b0;
   --color-slate-600: #5f6e8f;
   --color-slate-700: #3f4c6b;
-  --color-slate-800: #29335a;
-  --color-slate-900: #161d38;
-  --color-slate-950: #0b1022;
+  --color-slate-800: #27345c;
+  --color-slate-900: #121a30;
+  --color-slate-950: #0a0f1e;
 
   font-family: 'Inter', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP',
     'Yu Gothic', Meiryo, system-ui, sans-serif;
@@ -66,24 +69,139 @@
   scrollbar-color: #3f4c6b transparent;
 }
 
-/* ---------- 数字は桁が揺れないように ---------- */
-.hf-root .font-mono {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
+/* ==========================================================
+   1. ページ全体の面(背景色)
+   ========================================================== */
+.hf-root.bg-slate-950 {
+  background-color: var(--hf-bg);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(34, 211, 238, 0.07), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 85% 100%, rgba(129, 140, 248, 0.09), transparent 70%);
+  background-attachment: fixed;
 }
 
-/* ---------- 文字の読みやすさ(Tailwind v3/v4 どちらでも効く) ---------- */
-.hf-root .text-xs {
-  font-size: 0.82rem;
-  line-height: 1.3rem;
+.hf-root .bg-slate-950 {
+  background-color: var(--hf-bg);
 }
 
-.hf-root .text-\[11px\] {
-  font-size: 12.5px;
+.hf-root .bg-slate-950\/95 {
+  background-color: color-mix(in srgb, var(--hf-bg) 95%, transparent);
 }
 
-.hf-root .text-\[10px\] {
-  font-size: 11.5px;
+.hf-root .bg-slate-950\/90 {
+  background-color: color-mix(in srgb, var(--hf-bg) 92%, transparent);
+}
+
+.hf-root .bg-slate-950\/85 {
+  background-color: color-mix(in srgb, var(--hf-bg) 88%, transparent);
+}
+
+.hf-root .bg-slate-950\/80 {
+  background-color: color-mix(in srgb, var(--hf-bg) 82%, transparent);
+}
+
+.hf-root .bg-slate-950\/60 {
+  background-color: color-mix(in srgb, var(--hf-bg) 70%, transparent);
+}
+
+.hf-root .bg-slate-950\/40 {
+  background-color: color-mix(in srgb, var(--hf-bg) 50%, transparent);
+}
+
+.hf-root .bg-slate-900 {
+  background-color: var(--hf-surface);
+}
+
+.hf-root .bg-slate-900\/95 {
+  background-color: color-mix(in srgb, var(--hf-surface) 96%, transparent);
+}
+
+.hf-root .bg-slate-900\/90 {
+  background-color: color-mix(in srgb, var(--hf-surface) 94%, transparent);
+}
+
+.hf-root .bg-slate-900\/80 {
+  background-color: color-mix(in srgb, var(--hf-surface) 88%, transparent);
+}
+
+.hf-root .bg-slate-900\/60 {
+  background-color: color-mix(in srgb, var(--hf-surface) 70%, transparent);
+}
+
+.hf-root .bg-slate-800 {
+  background-color: var(--hf-surface-2);
+}
+
+.hf-root .bg-slate-800\/80 {
+  background-color: color-mix(in srgb, var(--hf-surface-2) 85%, transparent);
+}
+
+.hf-root .bg-slate-800\/60 {
+  background-color: color-mix(in srgb, var(--hf-surface-2) 70%, transparent);
+}
+
+.hf-root .bg-slate-600 {
+  background-color: var(--hf-border-hi);
+}
+
+.hf-root .hover\:bg-slate-700:hover {
+  background-color: var(--hf-surface-3);
+}
+
+/* 背景のぼかし玉 */
+.hf-root .bg-blue-600\/10 {
+  background-color: rgba(34, 211, 238, 0.10);
+}
+
+.hf-root .bg-purple-600\/10 {
+  background-color: rgba(129, 140, 248, 0.12);
+}
+
+/* ==========================================================
+   2. 枠線
+   ========================================================== */
+.hf-root .border-slate-900 {
+  border-color: var(--hf-surface-2);
+}
+
+.hf-root .border-slate-800 {
+  border-color: var(--hf-border);
+}
+
+.hf-root .border-slate-800\/80 {
+  border-color: color-mix(in srgb, var(--hf-border) 80%, transparent);
+}
+
+.hf-root .border-slate-800\/60 {
+  border-color: color-mix(in srgb, var(--hf-border) 60%, transparent);
+}
+
+.hf-root .border-slate-700 {
+  border-color: var(--hf-border-hi);
+}
+
+.hf-root .border-slate-700\/80 {
+  border-color: color-mix(in srgb, var(--hf-border-hi) 80%, transparent);
+}
+
+.hf-root .border-slate-600 {
+  border-color: var(--hf-border-hi);
+}
+
+/* ==========================================================
+   3. 文字色
+   ========================================================== */
+.hf-root.text-slate-100,
+.hf-root .text-slate-100 {
+  color: var(--hf-text);
+}
+
+.hf-root .text-slate-200 {
+  color: #dbe2f2;
+}
+
+.hf-root .text-slate-300 {
+  color: var(--hf-text-sub);
 }
 
 .hf-root .text-slate-400 {
@@ -98,11 +216,81 @@
   color: var(--hf-text-mute);
 }
 
-.hf-root .border-slate-800 {
-  border-color: #36416a;
+.hf-root .placeholder-slate-500::placeholder,
+.hf-root input::placeholder {
+  color: var(--hf-text-mute);
 }
 
-/* ---------- ボタン・入力 ---------- */
+/* 小さい文字を少し大きく */
+.hf-root .text-xs {
+  font-size: 0.82rem;
+  line-height: 1.3rem;
+}
+
+.hf-root .text-\[11px\] {
+  font-size: 12.5px;
+}
+
+.hf-root .text-\[10px\] {
+  font-size: 11.5px;
+}
+
+/* 数字は桁が揺れないように */
+.hf-root .font-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================
+   4. グラデーション(青→紫 を シアン→インディゴ に統一)
+   ========================================================== */
+/* タイトル文字(3色) */
+.hf-root .bg-clip-text.from-blue-400.via-indigo-300 {
+  background-image: linear-gradient(to right, #67e8f9, #a5b4fc, #c4b5fd);
+}
+
+/* TOTAL TIME の文字(2色) */
+.hf-root .bg-clip-text.from-blue-400.to-indigo-300 {
+  background-image: linear-gradient(to right, #67e8f9, #a5b4fc);
+}
+
+/* 大きいボタン(参加する) */
+.hf-root .from-blue-600.via-indigo-600 {
+  background-image: linear-gradient(to right, var(--hf-cyan-deep), var(--hf-indigo), var(--hf-violet));
+}
+
+.hf-root .from-blue-600.via-indigo-600:hover {
+  background-image: linear-gradient(to right, #06b6d4, #6366f1, #a78bfa);
+}
+
+/* 「問題 N / 5」のバッジ */
+.hf-root .from-blue-600.to-indigo-600 {
+  background-image: linear-gradient(to right, var(--hf-cyan-deep), var(--hf-indigo));
+}
+
+/* 進行バー */
+.hf-root .from-blue-500.via-indigo-500 {
+  background-image: linear-gradient(to right, #22d3ee, #6366f1, #a78bfa);
+}
+
+/* 上の小さなバナー */
+.hf-root .from-indigo-500\/20.via-purple-500\/20 {
+  background-image: linear-gradient(to right, rgba(34, 211, 238, 0.16), rgba(99, 102, 241, 0.18), rgba(167, 139, 250, 0.16));
+}
+
+/* 待機カード */
+.hf-root .from-indigo-950\/40.via-purple-950\/20 {
+  background-image: linear-gradient(to bottom right, rgba(34, 49, 110, 0.45), rgba(24, 34, 74, 0.35), rgba(10, 15, 30, 0.7));
+}
+
+/* 結果発表のヒーロー */
+.hf-root .from-indigo-900\/90.via-purple-950\/80 {
+  background-image: linear-gradient(to bottom right, rgba(30, 41, 100, 0.92), rgba(20, 28, 66, 0.9), rgba(18, 26, 48, 0.96));
+}
+
+/* ==========================================================
+   5. ボタン・入力
+   ========================================================== */
 .hf-root button {
   cursor: pointer;
   transition: transform 0.15s var(--hf-ease), background-color 0.2s, border-color 0.2s,
@@ -122,12 +310,9 @@
 
 .hf-root input[type='text'] {
   font-size: 16px;
-  /* iOSのフォーカス時ズーム防止 */
 }
 
-.hf-root input::placeholder {
-  color: var(--hf-text-mute);
-}
+/* iOSのズーム防止 */
 
 /* ---------- スクロールバー ---------- */
 .hf-root ::-webkit-scrollbar {
@@ -167,18 +352,16 @@
 }
 
 /* ==========================================================
-   パズル盤面
-   ※ 属性セレクタ(fill='#1e293b' など)は PuzzleCanvas.tsx の
-     色コードと対応しています。tsx側の色を変えたらここも合わせること。
+   6. パズル盤面
+   ※ 属性セレクタの色コードは PuzzleCanvas.tsx と対応しています。
    ========================================================== */
-
 .hf-root svg {
   -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
 }
 
-/* 背景グリッドを中央から自然にフェード */
+/* 背景グリッド */
 .hf-root .bg-\[size\:2rem_2rem\] {
   -webkit-mask-image: radial-gradient(circle at center, #000 40%, transparent 85%);
   mask-image: radial-gradient(circle at center, #000 40%, transparent 85%);
@@ -188,7 +371,7 @@
   opacity: 0.4;
 }
 
-/* ---------- 丸(頂点) ---------- */
+/* ---------- 丸 ---------- */
 .hf-node {
   cursor: pointer;
   outline: none;
@@ -205,7 +388,6 @@
   transition: transform 0.2s var(--hf-ease), fill 0.2s, stroke 0.2s;
 }
 
-/* hover はマウスのときだけ(スマホで拡大したままになるのを防ぐ) */
 @media (hover: hover) {
   .hf-node:hover .hf-node-body {
     transform: scale(1.5);
@@ -216,31 +398,32 @@
   transform: scale(1.15);
 }
 
-/* 未訪問(ニセの丸もここ) */
 .hf-root svg circle[fill='#1e293b'] {
+  /* 未訪問(ニセの丸も) */
   fill: var(--hf-node-bg);
   stroke: var(--hf-node-rim);
   stroke-width: 3.5px;
 }
 
-/* 通過済み */
 .hf-root svg circle[fill='#3b82f6'] {
+  /* 通過済み */
   fill: var(--hf-visited);
   stroke: var(--hf-visited-rim);
   stroke-width: 3.5px;
 }
 
-/* 現在地 */
 .hf-root svg circle[fill='#f59e0b'] {
+  /* 現在地 */
   fill: var(--hf-current);
   stroke: var(--hf-current-rim);
   stroke-width: 4px;
 }
 
-/* 現在地のパルスリング */
 .hf-root svg circle[stroke='#f59e0b'] {
   stroke: var(--hf-current);
 }
+
+/* パルスリング */
 
 @keyframes hf-ring {
   0% {
@@ -274,15 +457,13 @@
   fill: var(--hf-node-text);
 }
 
-/* 未訪問 */
-/* 現在地(アンバー地)は濃い文字にして読みやすく */
 .hf-root .hf-node circle[fill='#f59e0b']+text {
+  /* 現在地は濃い文字 */
   fill: #1c1304;
   stroke: var(--hf-current);
 }
 
 /* ---------- 線 ---------- */
-/* なぞった線 */
 @keyframes hf-draw {
   from {
     stroke-dashoffset: 600;
@@ -295,7 +476,6 @@
 
 .hf-line-traced {
   stroke-dasharray: 600;
-  /* 盤面の対角線(約424)より十分長く */
   animation: hf-draw 0.35s ease-out forwards;
 }
 
@@ -304,22 +484,20 @@
   stroke-width: 6px;
 }
 
-/* 線のぼんやり光る部分 */
 .hf-root svg line[stroke='#38bdf8']:not(.hf-line-traced) {
   stroke: var(--hf-line);
 }
 
-/* 完成時の塗り */
 .hf-root svg polygon[fill='#38bdf8'] {
   fill: var(--hf-line);
 }
 
-/* ---------- 目の錯覚の背景ガイド線 ---------- */
+/* ---------- 錯覚の背景ガイド線 ---------- */
 .hf-root svg g[stroke='#64748b'] {
   stroke: var(--hf-guide);
 }
 
-/* ---------- 難しい問題用: 盤面がゆらゆらゆれる ---------- */
+/* ---------- 盤面がゆれる ---------- */
 @keyframes hf-wobble {
   from {
     transform: rotate(-3.5deg);
@@ -343,7 +521,7 @@
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }
 
-/* ---------- 動きを減らす設定の人向け ---------- */
+/* ---------- 動きを減らす設定 ---------- */
 @media (prefers-reduced-motion: reduce) {
 
   .hf-root *,
