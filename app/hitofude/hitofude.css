@@ -1,23 +1,105 @@
 /* ==========================================================
-   一筆書き競争 — 仕上げ用CSS(ゲームのページ内だけに効く版)
-   すべて .hf-root の内側に限定しているので、他ページには影響しません。
+   一筆書き競争 — 仕上げ用CSS(リライト版)
+   すべて .hf-root の内側に限定。他ページには影響しません。
+
+   色を変えたいときは、まず下の「デザイントークン」だけ触ればOK。
    ========================================================== */
 
 .hf-root {
+  /* ---------- デザイントークン ---------- */
+  /* 文字 */
+  --hf-text: #eef2fb;
+  /* 本文・見出し */
+  --hf-text-sub: #b4bfd6;
+  /* 補足 */
+  --hf-text-mute: #8f9dba;
+  /* 注釈・ラベル */
+
+  /* アクセント */
+  --hf-accent: #818cf8;
+  /* インディゴ: フォーカス・強調 */
+  --hf-line: #22d3ee;
+  /* なぞった線(シアン) */
+  --hf-visited: #6366f1;
+  /* 通過済みの丸 */
+  --hf-visited-rim: #c7d2fe;
+  --hf-current: #fbbf24;
+  /* 現在地(アンバー) */
+  --hf-current-rim: #fffbeb;
+
+  /* パズル盤面 */
+  --hf-node-bg: #0b1022;
+  /* 未訪問の丸の中身 */
+  --hf-node-rim: #e8ecf6;
+  /* 未訪問の丸のふち */
+  --hf-node-text: #ffffff;
+  --hf-ink: #0b1022;
+  /* 文字の縁取り */
+  --hf-guide: #7a89a8;
+  /* 背景の錯覚ガイド線 */
+
   --hf-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ---------- Tailwind v4 用: slate を紺寄りの色に差し替え ----------
+     このブロックは .hf-root の中のTailwindクラス(bg-slate-900 や
+     border-slate-800/50 など透明度つきも)の色をまとめて変えます。
+     ※ Tailwind v3 の場合は効きません(下の個別上書きだけ効きます) */
+  --color-slate-50: #f4f6fb;
+  --color-slate-100: #eef2fb;
+  --color-slate-200: #d9e0ef;
+  --color-slate-300: #b4bfd6;
+  --color-slate-400: #9aa8c4;
+  --color-slate-500: #8392b0;
+  --color-slate-600: #5f6e8f;
+  --color-slate-700: #3f4c6b;
+  --color-slate-800: #29335a;
+  --color-slate-900: #161d38;
+  --color-slate-950: #0b1022;
+
   font-family: 'Inter', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP',
     'Yu Gothic', Meiryo, system-ui, sans-serif;
   font-feature-settings: 'palt';
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: #3f4c6b transparent;
 }
 
-/* 数字は桁が揺れないように */
+/* ---------- 数字は桁が揺れないように ---------- */
 .hf-root .font-mono {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
+}
+
+/* ---------- 文字の読みやすさ(Tailwind v3/v4 どちらでも効く) ---------- */
+.hf-root .text-xs {
+  font-size: 0.82rem;
+  line-height: 1.3rem;
+}
+
+.hf-root .text-\[11px\] {
+  font-size: 12.5px;
+}
+
+.hf-root .text-\[10px\] {
+  font-size: 11.5px;
+}
+
+.hf-root .text-slate-400 {
+  color: var(--hf-text-sub);
+}
+
+.hf-root .text-slate-500 {
+  color: var(--hf-text-mute);
+}
+
+.hf-root .text-slate-600 {
+  color: var(--hf-text-mute);
+}
+
+.hf-root .border-slate-800 {
+  border-color: #36416a;
 }
 
 /* ---------- ボタン・入力 ---------- */
@@ -26,158 +108,249 @@
   transition: transform 0.15s var(--hf-ease), background-color 0.2s, border-color 0.2s,
     box-shadow 0.2s, opacity 0.2s;
 }
+
 .hf-root button:disabled {
   cursor: not-allowed;
 }
+
 .hf-root button:focus-visible,
 .hf-root input:focus-visible,
 .hf-root a:focus-visible {
-  outline: 2px solid #818cf8;
+  outline: 3px solid var(--hf-accent);
   outline-offset: 2px;
 }
+
 .hf-root input[type='text'] {
-  font-size: 16px; /* iOSのフォーカス時ズーム防止 */
+  font-size: 16px;
+  /* iOSのフォーカス時ズーム防止 */
+}
+
+.hf-root input::placeholder {
+  color: var(--hf-text-mute);
 }
 
 /* ---------- スクロールバー ---------- */
-.hf-root ::-webkit-scrollbar { width: 8px; height: 8px; }
-.hf-root ::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
-.hf-root ::-webkit-scrollbar-thumb:hover { background: #475569; }
+.hf-root ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.hf-root ::-webkit-scrollbar-thumb {
+  background: #3f4c6b;
+  border-radius: 999px;
+}
+
+.hf-root ::-webkit-scrollbar-thumb:hover {
+  background: #5f6e8f;
+}
 
 /* ---------- 登場アニメ ---------- */
 @keyframes hf-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.hf-root .animate-fade-in {   /* PuzzleCanvasで使われているが未定義だったもの */
+
+.hf-root .animate-fade-in {
   animation: hf-fade-in 0.35s var(--hf-ease) both;
 }
-.hf-root > main > div,
-.hf-root > main > div > div {
+
+.hf-root>main>div,
+.hf-root>main>div>div {
   animation: hf-fade-in 0.4s var(--hf-ease) both;
 }
 
-/* ---------- パズルのSVG ---------- */
+/* ==========================================================
+   パズル盤面
+   ※ 属性セレクタ(fill='#1e293b' など)は PuzzleCanvas.tsx の
+     色コードと対応しています。tsx側の色を変えたらここも合わせること。
+   ========================================================== */
+
 .hf-root svg {
   -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
 }
 
-/* SVGのscale/pingは原点(0,0)基準になり、円が左上へ飛ぶバグの修正 */
-.hf-node { cursor: pointer; outline: none; }
+/* 背景グリッドを中央から自然にフェード */
+.hf-root .bg-\[size\:2rem_2rem\] {
+  -webkit-mask-image: radial-gradient(circle at center, #000 40%, transparent 85%);
+  mask-image: radial-gradient(circle at center, #000 40%, transparent 85%);
+}
+
+.hf-root .opacity-20.bg-\[size\:2rem_2rem\] {
+  opacity: 0.4;
+}
+
+/* ---------- 丸(頂点) ---------- */
+.hf-node {
+  cursor: pointer;
+  outline: none;
+}
+
 .hf-node circle,
 .hf-node text {
   transform-box: fill-box;
   transform-origin: center;
 }
+
 .hf-node-body {
+  transform: scale(1.3);
   transition: transform 0.2s var(--hf-ease), fill 0.2s, stroke 0.2s;
 }
-.hf-node:hover .hf-node-body  { transform: scale(1.2); }
-.hf-node:active .hf-node-body { transform: scale(0.95); }
+
+/* hover はマウスのときだけ(スマホで拡大したままになるのを防ぐ) */
+@media (hover: hover) {
+  .hf-node:hover .hf-node-body {
+    transform: scale(1.5);
+  }
+}
+
+.hf-node:active .hf-node-body {
+  transform: scale(1.15);
+}
+
+/* 未訪問(ニセの丸もここ) */
+.hf-root svg circle[fill='#1e293b'] {
+  fill: var(--hf-node-bg);
+  stroke: var(--hf-node-rim);
+  stroke-width: 3.5px;
+}
+
+/* 通過済み */
+.hf-root svg circle[fill='#3b82f6'] {
+  fill: var(--hf-visited);
+  stroke: var(--hf-visited-rim);
+  stroke-width: 3.5px;
+}
+
+/* 現在地 */
+.hf-root svg circle[fill='#f59e0b'] {
+  fill: var(--hf-current);
+  stroke: var(--hf-current-rim);
+  stroke-width: 4px;
+}
 
 /* 現在地のパルスリング */
-@keyframes hf-ring {
-  0%   { transform: scale(0.7); opacity: 0.9; }
-  100% { transform: scale(1.6); opacity: 0; }
+.hf-root svg circle[stroke='#f59e0b'] {
+  stroke: var(--hf-current);
 }
+
+@keyframes hf-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
 .hf-ring {
   transform-box: fill-box;
   transform-origin: center;
   animation: hf-ring 1.2s ease-out infinite;
 }
 
-/* なぞった線が引かれるアニメ */
-@keyframes hf-draw {
-  from { stroke-dashoffset: 400; }
-  to   { stroke-dashoffset: 0; }
-}
-.hf-line-traced {
-  stroke-dasharray: 400;
-  animation: hf-draw 0.35s ease-out forwards;
-}
-
-/* 盤面の背景グリッドを中央からフェード */
-.hf-root .bg-\[size\:2rem_2rem\] {
-  -webkit-mask-image: radial-gradient(circle at center, #000 40%, transparent 85%);
-  mask-image: radial-gradient(circle at center, #000 40%, transparent 85%);
-}
-
-/* ---------- スマホの安全領域 ---------- */
-.hf-root > header { padding-top: env(safe-area-inset-top, 0px); }
-.hf-root > footer { padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
-
-/* ---------- 動きを減らす設定の人向け ---------- */
-@media (prefers-reduced-motion: reduce) {
-  .hf-root *, .hf-root *::before, .hf-root *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-
-/* ==========================================================
-   見やすさアップ(文字・パズル盤面のコントラストを強化)
-   ========================================================== */
-
-/* --- 小さい文字を大きく・薄い文字を明るく --- */
-.hf-root .text-xs { font-size: 0.82rem; line-height: 1.25rem; }
-.hf-root .text-\[11px\] { font-size: 12.5px; }
-.hf-root .text-\[10px\] { font-size: 11.5px; }
-.hf-root .text-slate-400 { color: #cbd5e1; }
-.hf-root .text-slate-500 { color: #a8b5c8; }
-.hf-root .text-slate-600 { color: #8b9ab0; }
-.hf-root .border-slate-800 { border-color: #475569; }
-
-/* --- パズル盤面 --- */
-/* まだなぞっていない線: 暗い灰色 → くっきり明るい線に */
-.hf-root svg line[stroke='#334155'] {
-  stroke: #cbd5e1;
-  stroke-width: 4px;
-  stroke-dasharray: 9 7;
-}
-/* なぞった線: 太く明るく */
-.hf-root svg .hf-line-traced {
-  stroke: #38bdf8;
-  stroke-width: 7px;
-}
-
-/* まる(頂点): 大きく、白い縁で目立たせる */
-.hf-root .hf-node-body { transform: scale(1.35); }
-.hf-root .hf-node:hover .hf-node-body { transform: scale(1.55); }
-.hf-root .hf-node:active .hf-node-body { transform: scale(1.2); }
-.hf-root svg circle[fill='#1e293b'] {   /* 未訪問 */
-  fill: #0f172a;
-  stroke: #f1f5f9;
-  stroke-width: 3.5px;
-}
-.hf-root svg circle[fill='#3b82f6'] {   /* 通過済み */
-  stroke: #dbeafe;
-}
-.hf-root svg circle[fill='#f59e0b'] {   /* 現在地 */
-  stroke: #ffffff;
-  stroke-width: 4px;
-}
+/* ---------- 番号 ---------- */
 .hf-root .hf-node text {
   font-size: 14px;
   font-weight: 800;
   paint-order: stroke;
-  stroke: #0f172a;
-  stroke-width: 2px;
+  stroke: var(--hf-ink);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
 }
-.hf-root .hf-node text[fill='#94a3b8'] { fill: #ffffff; }  /* 未訪問の番号を白に */
 
-/* 盤面の背景グリッドを少し見えるように */
-.hf-root .opacity-20.bg-\[size\:2rem_2rem\] { opacity: 0.35; }
+.hf-root .hf-node text[fill='#94a3b8'] {
+  fill: var(--hf-node-text);
+}
 
+/* 未訪問 */
+/* 現在地(アンバー地)は濃い文字にして読みやすく */
+.hf-root .hf-node circle[fill='#f59e0b']+text {
+  fill: #1c1304;
+  stroke: var(--hf-current);
+}
+
+/* ---------- 線 ---------- */
+/* なぞった線 */
+@keyframes hf-draw {
+  from {
+    stroke-dashoffset: 600;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.hf-line-traced {
+  stroke-dasharray: 600;
+  /* 盤面の対角線(約424)より十分長く */
+  animation: hf-draw 0.35s ease-out forwards;
+}
+
+.hf-root svg .hf-line-traced {
+  stroke: var(--hf-line);
+  stroke-width: 6px;
+}
+
+/* 線のぼんやり光る部分 */
+.hf-root svg line[stroke='#38bdf8']:not(.hf-line-traced) {
+  stroke: var(--hf-line);
+}
+
+/* 完成時の塗り */
+.hf-root svg polygon[fill='#38bdf8'] {
+  fill: var(--hf-line);
+}
+
+/* ---------- 目の錯覚の背景ガイド線 ---------- */
+.hf-root svg g[stroke='#64748b'] {
+  stroke: var(--hf-guide);
+}
 
 /* ---------- 難しい問題用: 盤面がゆらゆらゆれる ---------- */
 @keyframes hf-wobble {
-  from { transform: rotate(-3.5deg); }
-  to   { transform: rotate(3.5deg); }
+  from {
+    transform: rotate(-3.5deg);
+  }
+
+  to {
+    transform: rotate(3.5deg);
+  }
 }
+
 .hf-root svg.hf-wobble {
   animation: hf-wobble 6s ease-in-out infinite alternate;
+}
+
+/* ---------- スマホの安全領域 ---------- */
+.hf-root>header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.hf-root>footer {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* ---------- 動きを減らす設定の人向け ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+  .hf-root *,
+  .hf-root *::before,
+  .hf-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
